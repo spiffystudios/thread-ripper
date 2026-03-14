@@ -182,9 +182,10 @@ var SFX={
 };
 // ============================================================
 // MUSIC — iOS Safari compatible
-// iOS requires AudioContext.resume() called synchronously in
-// a touch handler. We store a pendingMusic level and start
-// it the next time a touch event fires after AC is running.
+// Strategy: unlockAudio() is called on every touch synchronously.
+// It calls AC.resume() directly (no .then — iOS blocks async audio).
+// startM sets mPending=true; gLoop polls each frame and kicks off
+// music the moment AC.state becomes "running".
 // ============================================================
 var mPlay=false,mIdx=0,mOn=true,mLv=0,mPending=false;
 var MN=[
@@ -198,58 +199,48 @@ function getAC(){
   return AC;
 }
 
-// Called on every user touch — resumes AC and starts pending music
+// Called synchronously on every touch — iOS requires this
 function unlockAudio(){
   var a=getAC();
-  if(a.state==='suspended'){
-    a.resume().then(function(){
-      if(mPending){mPending=false;_startMNow(mLv);}
-    });
-  } else if(a.state==='running'){
-    if(mPending){mPending=false;_startMNow(mLv);}
-  }
+  if(a.state!=='running')a.resume(); // synchronous call, no .then needed
 }
 
-function _startMNow(lv){
-  if(!mOn||!mPlay)return;
-  var n=MN[Math.min(lv,2)];
-  (function lp(){
-    if(!mPlay)return;
-    try{
-      var a=getAC();
-      if(a.state!=='running'){mPending=true;mLv=lv;return;} // wait for next touch
-      var o=a.createOscillator(),g=a.createGain();
-      o.connect(g);g.connect(a.destination);
-      o.type='square';
-      o.frequency.value=n[mIdx%n.length];
-      g.gain.setValueAtTime(0.05,a.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
-      o.start(a.currentTime);
-      o.stop(a.currentTime+0.20);
-      mIdx++;
-      setTimeout(lp,220);
-    }catch(e){}
-  })();
+// Play one note and schedule the next
+function _playNote(){
+  if(!mPlay||!mOn)return;
+  try{
+    var a=getAC();
+    if(a.state!=='running'){mPending=true;return;} // not ready, gLoop will retry
+    var n=MN[Math.min(mLv,2)];
+    var o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.type='square';
+    o.frequency.value=n[mIdx%n.length];
+    g.gain.setValueAtTime(0.05,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
+    o.start(a.currentTime);
+    o.stop(a.currentTime+0.20);
+    mIdx++;
+    mPending=false;
+    setTimeout(_playNote,220);
+  }catch(e){mPending=true;}
 }
 
 function startM(lv){
   stopM();
   if(!mOn)return;
-  mPlay=true;mIdx=0;mLv=lv;
-  var a=getAC();
-  if(a.state==='running'){
-    _startMNow(lv);
-  } else {
-    // AC not running yet — queue it for next touch unlock
-    mPending=true;
-    a.resume().then(function(){
-      if(mPending&&mPlay){mPending=false;_startMNow(lv);}
-    }).catch(function(){
-      mPending=true; // will retry on next touch
-    });
-  }
+  mPlay=true;mIdx=0;mLv=lv;mPending=true; // always set pending; gLoop starts it
 }
 function stopM(){mPlay=false;mPending=false;}
+
+// Called every frame from gLoop — starts music when AC is ready
+function tickMusic(){
+  if(mPending&&mPlay&&mOn){
+    var a=getAC();
+    if(a.state==='running'){_playNote();}
+    else{a.resume();} // keep trying to resume
+  }
+}
 
 // Input
 var keys={};
@@ -1404,9 +1395,171 @@ Boss.prototype.drw=function(){
     ctx.fillRect(x-4,y-4,this.w+8,this.h+8);
     ctx.globalAlpha=1;
   }
-  if(this.t==='kn'){ctx.save();ctx.translate(x+this.w/2,y+this.h/2);ctx.rotate(this.ra);ctx.fillStyle='#8B4513';ctx.beginPath();ctx.arc(0,0,24,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#FF8C00';ctx.lineWidth=4;for(var i=0;i<6;i++){ctx.beginPath();ctx.arc(0,0,14,i*Math.PI/3,(i+.5)*Math.PI/3);ctx.stroke();}ctx.fillStyle='#FFF';ctx.fillRect(-10,-8,8,8);ctx.fillRect(4,-8,8,8);ctx.fillStyle='#000';ctx.fillRect(-8,-6,4,4);ctx.fillRect(6,-6,4,4);ctx.restore();}
-  if(this.t==='vk'){ctx.fillStyle='#3333BB';ctx.fillRect(x,y,28,this.h);ctx.fillStyle='#BB33BB';ctx.fillRect(x+28,y,28,this.h);ctx.fillStyle='#FFF';ctx.fillRect(x+4,y+8,12,12);ctx.fillRect(x+40,y+8,12,12);ctx.fillStyle='#000';ctx.fillRect(x+7,y+11,6,6);ctx.fillRect(x+43,y+11,6,6);for(var i=0;i<7;i++){ctx.fillStyle=i%2?'#3333BB':'#BB33BB';ctx.fillRect(x+i*8,y+this.h-10,7,10);}ctx.fillStyle='#222';ctx.fillRect(x+26,y,4,this.h);}
-  if(this.t==='ul'){var cl=this.ph===3?'#FF2200':this.ph===2?'#8800CC':'#334466';ctx.fillStyle=cl;ctx.fillRect(x,y+20,this.w,this.h-20);ctx.fillStyle='#FFF';ctx.fillRect(x,y+this.h-16,this.w,16);ctx.fillStyle='#FF6666';ctx.fillRect(x+16,y+8,this.w-32,20);var ec=this.ph>=2?'#F00':'#FFD700';for(var i=0;i<3;i++){ctx.fillStyle=ec;ctx.fillRect(x+8+i*22,y+12,10,10);ctx.fillStyle='#000';ctx.fillRect(x+10+i*22,y+14,6,6);}ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+8,y+10);ctx.lineTo(x+20,y+14);ctx.stroke();ctx.beginPath();ctx.moveTo(x+this.w-8,y+10);ctx.lineTo(x+this.w-20,y+14);ctx.stroke();}
+  if(this.t==='kn'){
+    // ── THE KNOTTER ── Giant sentient shoelace knot monster
+    // Rotating knotted body
+    ctx.save();ctx.translate(x+this.w/2,y+this.h/2);ctx.rotate(this.ra);
+    // Outer glow ring
+    ctx.globalAlpha=0.25+Math.sin(Date.now()*.004)*0.1;
+    ctx.fillStyle='#FF8C00';
+    ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=this.hF>0?.45:1;
+    // Layered knot loops — 3 overlapping shapes
+    var kc=['#8B4513','#A0522D','#6B3410'];
+    for(var ki=0;ki<3;ki++){
+      ctx.fillStyle=kc[ki];
+      ctx.beginPath();
+      ctx.arc(Math.cos(ki*2.1)*8,Math.sin(ki*2.1)*8,16,0,Math.PI*2);
+      ctx.fill();
+    }
+    // Lace cross-strands — orange cables
+    ctx.strokeStyle='#FF6600';ctx.lineWidth=4;ctx.lineCap='round';
+    for(var si=0;si<4;si++){
+      var sa=si*Math.PI/2+this.ra*0.3;
+      ctx.beginPath();ctx.moveTo(Math.cos(sa)*6,Math.sin(sa)*6);
+      ctx.lineTo(Math.cos(sa+Math.PI)*18,Math.sin(sa+Math.PI)*18);ctx.stroke();
+    }
+    // Angry face in center
+    ctx.fillStyle='#FFF';ctx.fillRect(-9,-6,7,7);ctx.fillRect(2,-6,7,7);
+    // Pupils — track sideways
+    var px2=(this.vx>0?2:0);
+    ctx.fillStyle='#FF2200';ctx.fillRect(-8+px2,-5,4,5);ctx.fillRect(3+px2,-5,4,5);
+    // Angry V brows
+    ctx.fillStyle='#4A2000';ctx.lineWidth=2;ctx.strokeStyle='#4A2000';
+    ctx.beginPath();ctx.moveTo(-10,-7);ctx.lineTo(-4,-4);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(10,-7);ctx.lineTo(4,-4);ctx.stroke();
+    // Teeth
+    ctx.fillStyle='#FFF';for(var ti=0;ti<4;ti++)ctx.fillRect(-6+ti*3,3,2,4);
+    ctx.fillStyle='#F00';ctx.fillRect(-6,3,12,2);
+    // Spinning lace whips around body
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=2;
+    for(var wi=0;wi<3;wi++){
+      var wa=this.ra*2+wi*(Math.PI*2/3);
+      ctx.beginPath();ctx.moveTo(Math.cos(wa)*14,Math.sin(wa)*14);
+      ctx.lineTo(Math.cos(wa)*26,Math.sin(wa)*26);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if(this.t==='vk'){
+    // ── VELCRO VIKTOR ── Evil half-velcro, half-chrome demon sneaker-bot
+    var vt=Date.now()*.003;
+    // Legs — articulated pistons
+    ctx.fillStyle='#222244';
+    ctx.fillRect(x+6,y+this.h-8,10,12);ctx.fillRect(x+this.w-16,y+this.h-8,10,12);
+    ctx.fillStyle='#4444AA';
+    ctx.fillRect(x+7,y+this.h-6,8,8);ctx.fillRect(x+this.w-15,y+this.h-6,8,8);
+    // Boot feet
+    ctx.fillStyle='#111';ctx.fillRect(x+2,y+this.h+2,18,6);ctx.fillRect(x+this.w-20,y+this.h+2,18,6);
+    // Main body — left=velcro, right=chrome
+    // Chrome right half
+    ctx.fillStyle='#6677AA';ctx.fillRect(x+this.w/2,y+4,this.w/2,this.h-12);
+    ctx.fillStyle='#99AACC';ctx.fillRect(x+this.w/2+2,y+6,this.w/2-6,8); // chest plate shine
+    // Velcro left half — textured
+    ctx.fillStyle='#3333AA';ctx.fillRect(x,y+4,this.w/2,this.h-12);
+    for(var vi=0;vi<4;vi++)for(var vj=0;vj<4;vj++){
+      ctx.fillStyle=vi%2===vj%2?'#2222AA':'#4444CC';
+      ctx.fillRect(x+2+vi*7,y+6+vj*8,6,7);
+    }
+    // Shoulder pads
+    ctx.fillStyle='#111133';ctx.fillRect(x-4,y+4,12,8);ctx.fillRect(x+this.w-8,y+4,12,8);
+    ctx.fillStyle='#555588';ctx.fillRect(x-2,y+5,8,5);ctx.fillRect(x+this.w-6,y+5,8,5);
+    // Head — angular robot skull
+    ctx.fillStyle='#222244';ctx.fillRect(x+8,y-14,this.w-16,16);
+    ctx.fillStyle='#333366';ctx.fillRect(x+10,y-12,this.w-20,12);
+    // Visor — glowing red
+    ctx.fillStyle='#FF1111';ctx.fillRect(x+10,y-10,this.w-20,5);
+    ctx.fillStyle='rgba(255,0,0,0.3)';ctx.fillRect(x+8,y-12,this.w-16,8);
+    // Antenna
+    ctx.fillStyle='#666';ctx.fillRect(x+this.w/2-1,y-22,2,10);
+    ctx.fillStyle='#FF0000';ctx.beginPath();ctx.arc(x+this.w/2,y-23,3,0,Math.PI*2);ctx.fill();
+    // Arms with velcro grippers
+    var armBob=Math.sin(vt)*3;
+    ctx.fillStyle='#222244';ctx.fillRect(x-14,y+8+armBob,14,6);ctx.fillRect(x+this.w,y+8-armBob,14,6);
+    // Gripper claws
+    ctx.fillStyle='#4444CC';
+    ctx.fillRect(x-18,y+5+armBob,6,4);ctx.fillRect(x-18,y+12+armBob,6,4);
+    ctx.fillRect(x+this.w+12,y+5-armBob,6,4);ctx.fillRect(x+this.w+12,y+12-armBob,6,4);
+    // Phase 2: spikes appear
+    if(this.ph>=2){
+      ctx.fillStyle='#FF2200';
+      for(var spi=0;spi<5;spi++){ctx.beginPath();ctx.moveTo(x+8+spi*9,y+4);ctx.lineTo(x+12+spi*9,y-4);ctx.lineTo(x+16+spi*9,y+4);ctx.closePath();ctx.fill();}
+    }
+  }
+
+  if(this.t==='ul'){
+    // ── THE UN-LACED KING ── Ancient demonic shoelace sovereign
+    var ult=Date.now()*.004;
+    var ulcol=this.ph===3?'#CC0000':this.ph===2?'#7700BB':'#223355';
+    var ulcol2=this.ph===3?'#FF4400':this.ph===2?'#AA44FF':'#4466AA';
+    // Robe — wide flowing cape effect
+    ctx.fillStyle=ulcol;
+    ctx.beginPath();ctx.moveTo(x-8,y+this.h);ctx.lineTo(x+this.w+8,y+this.h);
+    ctx.lineTo(x+this.w+4,y+20);ctx.lineTo(x-4,y+20);ctx.closePath();ctx.fill();
+    // Robe trim
+    ctx.strokeStyle=ulcol2;ctx.lineWidth=2;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(x-4,y+20);ctx.lineTo(x-8,y+this.h);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+this.w+4,y+20);ctx.lineTo(x+this.w+8,y+this.h);ctx.stroke();
+    ctx.setLineDash([]);
+    // Body armour
+    ctx.fillStyle=ulcol2;ctx.fillRect(x+4,y+14,this.w-8,this.h-30);
+    ctx.fillStyle=this.ph===3?'#FF6600':this.ph===2?'#CC66FF':'#6688CC';
+    ctx.fillRect(x+8,y+16,this.w-16,10); // chest jewel area
+    // Phase glow on chest
+    ctx.fillStyle=this.ph===3?'rgba(255,80,0,0.5)':this.ph===2?'rgba(170,0,255,0.4)':'rgba(80,120,255,0.3)';
+    var gPulse=0.6+Math.sin(ult*3)*0.3;
+    ctx.globalAlpha=gPulse;ctx.beginPath();ctx.arc(x+this.w/2,y+22,12,0,Math.PI*2);ctx.fill();ctx.globalAlpha=this.hF>0?.45:1;
+    // Chest jewel
+    ctx.fillStyle=this.ph===3?'#FF4400':this.ph===2?'#CC44FF':'#4488FF';
+    ctx.beginPath();ctx.moveTo(x+this.w/2,y+16);ctx.lineTo(x+this.w/2+6,y+22);ctx.lineTo(x+this.w/2,y+28);ctx.lineTo(x+this.w/2-6,y+22);ctx.closePath();ctx.fill();
+    // Neck / head base
+    ctx.fillStyle='#DDBBAA';ctx.fillRect(x+this.w/2-6,y+4,12,12);
+    // Face
+    ctx.fillStyle='#CCAA99';ctx.fillRect(x+this.w/2-10,y-4,20,14);
+    // Hollow glowing eyes
+    ctx.fillStyle=this.ph===3?'#FF0000':this.ph===2?'#CC00FF':'#4444FF';
+    ctx.fillRect(x+this.w/2-8,y-1,5,5);ctx.fillRect(x+this.w/2+3,y-1,5,5);
+    ctx.fillStyle='#000';ctx.fillRect(x+this.w/2-7,y,3,3);ctx.fillRect(x+this.w/2+4,y,3,3);
+    // Inner glow in eyes
+    ctx.fillStyle=this.ph===3?'rgba(255,0,0,0.8)':this.ph===2?'rgba(200,0,255,0.8)':'rgba(100,100,255,0.8)';
+    ctx.beginPath();ctx.arc(x+this.w/2-5,y+2,2,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.arc(x+this.w/2+6,y+2,2,0,Math.PI*2);ctx.fill();
+    // Crown — 5 spikes, gets more elaborate each phase
+    var crownCol=this.ph===3?'#FF4400':this.ph===2?'#FFD700':'#FFD700';
+    ctx.fillStyle=crownCol;
+    var spikes=this.ph>=2?7:5;
+    for(var si=0;si<spikes;si++){
+      var sx=x+this.w/2-12+(si*(24/(spikes-1)));
+      var sh=this.ph>=3?14:this.ph>=2?11:8;
+      ctx.beginPath();ctx.moveTo(sx-4,y-4);ctx.lineTo(sx,y-4-sh);ctx.lineTo(sx+4,y-4);ctx.closePath();ctx.fill();
+    }
+    // Crown base band
+    ctx.fillStyle=this.ph===3?'#CC2200':this.ph===2?'#AAAA00':'#AA8800';
+    ctx.fillRect(x+this.w/2-14,y-6,28,4);
+    // Crown jewels
+    ctx.fillStyle=this.ph===3?'#FF8800':this.ph===2?'#00FFFF':'#00FFFF';
+    for(var ji=0;ji<3;ji++){ctx.beginPath();ctx.arc(x+this.w/2-6+ji*6,y-5,2,0,Math.PI*2);ctx.fill();}
+    // Arms — skeletal with sceptre
+    ctx.strokeStyle='#CCAA99';ctx.lineWidth=3;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(x+4,y+18);ctx.lineTo(x-10,y+28);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+this.w-4,y+18);ctx.lineTo(x+this.w+10,y+28);ctx.stroke();
+    // Sceptre in right hand
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(x+this.w+10,y+28);ctx.lineTo(x+this.w+16,y+8);ctx.stroke();
+    ctx.fillStyle=this.ph===3?'#FF0000':this.ph===2?'#CC00FF':'#FFD700';
+    ctx.beginPath();ctx.arc(x+this.w+16,y+6,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#FFF';ctx.beginPath();ctx.arc(x+this.w+16,y+6,2,0,Math.PI*2);ctx.fill();
+    // Phase 3: energy aura
+    if(this.ph===3){
+      ctx.strokeStyle='rgba(255,80,0,0.4)';ctx.lineWidth=3;
+      for(var ai=0;ai<6;ai++){
+        var aa=ai/6*Math.PI*2+ult;
+        var ar=20+Math.sin(ult*2+ai)*5;
+        ctx.beginPath();ctx.arc(x+this.w/2+Math.cos(aa)*ar,y+this.h/2+Math.sin(aa)*ar,2,0,Math.PI*2);ctx.stroke();
+      }
+    }
+    ctx.lineCap='butt';
+  }
   ctx.globalAlpha=1;this.pjs.forEach(function(p){p.drw();});
   if(this.landShake>0)ctx.restore();
   // Boss name always visible above boss (in world space, camera already applied)
@@ -1669,6 +1822,7 @@ function newGame(){
 
 function gLoop(ts){
   var dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
+  tickMusic(); // poll each frame — starts music when iOS AC becomes ready
   requestAnimationFrame(gLoop);
   ctx.fillStyle='#000';ctx.fillRect(0,0,GW,GH);
 
