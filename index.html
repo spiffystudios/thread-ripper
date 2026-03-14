@@ -180,9 +180,29 @@ var SFX={
   go:function(){[400,300,200,150].forEach(function(f,i){tone(f,.15,'sawtooth',.2,i*.12);});},
   lup:function(){[400,600,800,1000].forEach(function(f,i){tone(f,.1,'square',.1,i*.09);});}
 };
+// Music
 var mPlay=false,mIdx=0;
-var MN=[[262,330,392,330,262,294],[294,370,440,370,330,392],[330,415,494,415,370,440]];
-function startM(lv){stopM();mPlay=true;mIdx=0;var n=MN[lv]||MN[0];(function lp(){if(!mPlay)return;try{var a=getAC(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type='square';o.frequency.value=n[mIdx%n.length];g.gain.setValueAtTime(.03,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.16);o.start(a.currentTime);o.stop(a.currentTime+.18);mIdx++;setTimeout(lp,200);}catch(e){}})();}
+var MN=[
+  [262,330,392,330,262,294,330,262],
+  [294,370,440,370,330,392,440,330],
+  [330,415,494,415,370,440,494,370]
+];
+function startM(lv){
+  stopM();mPlay=true;mIdx=0;
+  var n=MN[Math.min(lv,2)];
+  (function lp(){
+    if(!mPlay)return;
+    try{
+      var a=getAC(),o=a.createOscillator(),g=a.createGain();
+      o.connect(g);g.connect(a.destination);
+      o.type='square';o.frequency.value=n[mIdx%n.length];
+      g.gain.setValueAtTime(.03,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.16);
+      o.start(a.currentTime);o.stop(a.currentTime+.18);
+      mIdx++;setTimeout(lp,200);
+    }catch(e){}
+  })();
+}
 function stopM(){mPlay=false;}
 
 // Input
@@ -253,105 +273,163 @@ function renderTut(){
   var body=document.getElementById('tut-body');
   body.innerHTML='';
 
+  // ── PAGE 1: STORY ──
   if(p.type==='story'){
     title.textContent='THREAD RIPPER';
-    // Story card
     var card=document.createElement('div');
-    card.style.cssText='background:#0a0a14;border:2px solid rgba(255,100,50,.4);border-radius:10px;padding:16px;';
-    card.innerHTML=[
-      '<div style="font-size:5px;color:#aaa;line-height:2.2;letter-spacing:.3px;">',
-      'Deep in Sneaker City, a pair of animated shoelaces named',
-      ' <span style="color:#FFD700">LACE</span> lived to skate.',
-      ' One day the evil <span style="color:#CC44CC">Velcro Viktor</span> — a half-velcro,',
-      ' half-demon bootleg sneaker — ripped Lace\'s board clean off their feet.',
-      '</div>',
-      '<div style="font-size:5px;color:#aaa;line-height:2.2;margin-top:10px;letter-spacing:.3px;">',
-      'Lace must fight through three wild worlds —',
-      ' <span style="color:#ff8c00">The Sneaker Factory</span>,',
-      ' <span style="color:#00ff80">The Skate Park</span>, and the',
-      ' <span style="color:#4488ff">Hall of Fame</span> —',
-      ' defeating bosses to reclaim the board.',
-      ' An ancient Wizard waits at the end with a secret weapon:',
-      ' <span style="color:gold">the legendary Glow Board</span>.',
-      '</div>',
-      '<div style="font-size:5px;color:#888;line-height:2;margin-top:10px;font-style:italic">',
-      'Thread your story. Lace up. Let\'s ride.',
-      '</div>'
-    ].join('');
+    card.style.cssText='background:#0a0a14;border:2px solid rgba(255,100,50,.35);border-radius:10px;padding:16px 14px;';
+    card.innerHTML=
+      '<div style="font-size:5px;color:#aaa;line-height:2.3;letter-spacing:.3px;">'
+      +'Deep in Sneaker City, a pair of animated laces named '
+      +'<b style="color:#FFD700">LACE</b> lived to skate.'
+      +' One day the evil <b style="color:#CC44CC">Velcro Viktor</b> '
+      +'ripped their board clean off their feet.</div>'
+      +'<div style="font-size:5px;color:#aaa;line-height:2.3;margin-top:10px;letter-spacing:.3px;">'
+      +'Lace must battle through three worlds — '
+      +'<b style="color:#ff8c00">Sneaker Factory</b>, '
+      +'<b style="color:#00ff80">Skate Park</b>, and '
+      +'<b style="color:#4488ff">Hall of Fame</b> — '
+      +'to defeat the bosses and reclaim the board.'
+      +' A Wizard waits at the end with '
+      +'<b style="color:#FFD700">the legendary Glow Board</b>.'
+      +'</div>'
+      +'<div style="font-size:5px;color:#666;line-height:2;margin-top:10px;">Thread your story. Lace up. Let\'s ride.</div>';
     body.appendChild(card);
   }
 
+  // ── PAGE 2: CONTROLS ──
   else if(p.type==='controls'){
-    title.textContent=isMob?'CONTROLS':'CONTROLS';
-    if(isMob){
-      // Mobile: show button icons with labels
-      var rows=[
-        {bg:'#1a3a5c',bc:'hsl(210,90%,50%)',icon:'◄►',label:'LEFT / RIGHT',desc:'Hold to skate in that direction'},
-        {bg:'#4a3800',bc:'hsl(45,100%,55%)',icon:'⬆⬆',label:'JUMP (tap twice)',desc:'Second jump = double jump + trick!'},
-        {bg:'#4a1a1a',bc:'hsl(0,90%,55%)',icon:'⚔',label:'ATK',desc:'Whip your lace — hits enemies & bosses'},
-      ];
-      rows.forEach(function(r){
-        var row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:11px 14px;margin-bottom:8px;';
-        var btn=document.createElement('div');
-        btn.style.cssText='width:48px;height:48px;border-radius:50%;background:'+r.bg+';border:3px solid '+r.bc+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';
-        btn.textContent=r.icon;
-        var txt=document.createElement('div');
-        txt.innerHTML='<div style="font-size:7px;color:#fff;margin-bottom:5px;">'+r.label+'</div><div style="font-size:5px;color:#888;line-height:1.7;">'+r.desc+'</div>';
-        row.appendChild(btn);row.appendChild(txt);body.appendChild(row);
-      });
-    } else {
-      // Desktop keyboard layout
-      var keys2=[
-        {keys:['← →','A  D'],col:'#1a3a5c',bc:'hsl(210,90%,50%)',desc:'Move left / right'},
-        {keys:['SPACE','↑'],col:'#4a3800',bc:'hsl(45,100%,55%)',desc:'Jump → tap twice = double jump + trick!'},
-        {keys:['Z','X'],col:'#4a1a1a',bc:'hsl(0,90%,55%)',desc:'Attack — whip your lace'},
-        {keys:['P'],col:'#222',bc:'#555',desc:'Pause the game'},
-      ];
-      keys2.forEach(function(r){
-        var row=document.createElement('div');
-        row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:11px 14px;margin-bottom:8px;';
-        var kbox=document.createElement('div');
-        kbox.style.cssText='display:flex;gap:4px;flex-shrink:0;';
-        r.keys.forEach(function(k){
-          var kb=document.createElement('div');
-          kb.style.cssText='background:'+r.col+';border:2px solid '+r.bc+';border-radius:6px;padding:4px 7px;font-size:6px;color:#fff;white-space:nowrap;';
-          kb.textContent=k;kbox.appendChild(kb);
-        });
-        var txt=document.createElement('div');
-        txt.style.cssText='font-size:5px;color:#888;line-height:1.7;';
-        txt.textContent=r.desc;
-        row.appendChild(kbox);row.appendChild(txt);body.appendChild(row);
-      });
+    title.textContent='CONTROLS';
+
+    // Icon builder — pure CSS shapes, no emoji
+    function mkIcon(html, bg, border){
+      var d=document.createElement('div');
+      d.style.cssText='width:52px;height:52px;border-radius:50%;background:'+bg
+        +';border:3px solid '+border
+        +';display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+      d.innerHTML=html;
+      return d;
     }
-    // Double jump tip
+    function mkRow(icon, label, desc){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:14px;background:#1a1a1a;border-radius:10px;padding:11px 12px;margin-bottom:8px;';
+      var txt=document.createElement('div');
+      txt.innerHTML='<div style="font-size:7px;color:#fff;margin-bottom:5px;letter-spacing:.3px;">'+label+'</div>'
+        +'<div style="font-size:5px;color:#777;line-height:1.8;">'+desc+'</div>';
+      row.appendChild(icon);row.appendChild(txt);
+      return row;
+    }
+
+    if(isMob){
+      // Left/Right: two arrow triangles side by side
+      var arrowSvg='<svg width="36" height="20" viewBox="0 0 36 20" fill="none" xmlns="http://www.w3.org/2000/svg">'
+        +'<polygon points="10,2 10,18 1,10" fill="#7EC8FF"/>'
+        +'<polygon points="26,2 26,18 35,10" fill="#7EC8FF"/>'
+        +'</svg>';
+      body.appendChild(mkRow(mkIcon(arrowSvg,'#0d2540','hsl(210,90%,50%)'),'LEFT  /  RIGHT','Hold to skate in that direction'));
+
+      // Jump: single up arrow, bold
+      var jumpSvg='<svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">'
+        +'<polygon points="13,2 24,14 18,14 18,26 8,26 8,14 2,14" fill="#FFD060"/>'
+        +'</svg>';
+      body.appendChild(mkRow(mkIcon(jumpSvg,'#2a1e00','hsl(45,100%,55%)'),'JUMP  (tap twice)','2nd tap in air = double jump + trick!'));
+
+      // Attack: diagonal slash lines
+      var atkSvg='<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">'
+        +'<line x1="4" y1="26" x2="26" y2="4" stroke="#FF7070" stroke-width="3.5" stroke-linecap="round"/>'
+        +'<line x1="4" y1="18" x2="18" y2="4" stroke="#FF7070" stroke-width="2" stroke-linecap="round" opacity=".5"/>'
+        +'<circle cx="26" cy="4" r="3.5" fill="#FFB0B0"/>'
+        +'</svg>';
+      body.appendChild(mkRow(mkIcon(atkSvg,'#2a0000','hsl(0,90%,55%)'),'ATK','Whip your lace — hits enemies &amp; bosses'));
+
+    } else {
+      // Desktop keyboard-style keys
+      function mkKey(label, bg, border){
+        var k=document.createElement('div');
+        k.style.cssText='background:'+bg+';border:2px solid '+border
+          +';border-radius:5px;padding:5px 9px;font-size:6px;color:#fff;'
+          +'white-space:nowrap;box-shadow:0 3px 0 rgba(0,0,0,.6);letter-spacing:.3px;';
+        k.textContent=label;return k;
+      }
+      function mkDskRow(keys2, desc){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:14px;background:#1a1a1a;border-radius:10px;padding:11px 12px;margin-bottom:8px;';
+        var kbox=document.createElement('div');
+        kbox.style.cssText='display:flex;gap:5px;flex-shrink:0;align-items:center;min-width:90px;';
+        keys2.forEach(function(k){kbox.appendChild(k);});
+        var txt=document.createElement('div');
+        txt.style.cssText='font-size:5px;color:#777;line-height:1.8;';
+        txt.textContent=desc;
+        row.appendChild(kbox);row.appendChild(txt);return row;
+      }
+      body.appendChild(mkDskRow([mkKey('A','#0d2540','hsl(210,90%,50%)'),mkKey('D','#0d2540','hsl(210,90%,50%)')],  'Move left / right'));
+      body.appendChild(mkDskRow([mkKey('SPACE','#2a1e00','hsl(45,100%,55%)')],                                      'Jump — tap twice for double jump + trick!'));
+      body.appendChild(mkDskRow([mkKey('Z','#2a0000','hsl(0,90%,55%)'),mkKey('X','#2a0000','hsl(0,90%,55%)')],     'Attack — whip your lace'));
+      body.appendChild(mkDskRow([mkKey('P','#1a1a1a','#555')],                                                      'Pause the game'));
+    }
+
+    // Tip bar
     var tip=document.createElement('div');
-    tip.style.cssText='background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:10px 12px;font-size:5px;color:#FFD700;line-height:1.8;margin-top:4px;';
-    tip.innerHTML='⬆⬆ <b>PRO TIP:</b> Double jumping mid-air auto-triggers a trick and earns bonus points!';
+    tip.style.cssText='background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.25);'
+      +'border-radius:8px;padding:9px 12px;font-size:5px;color:#FFD700;line-height:1.9;margin-top:2px;';
+    tip.innerHTML='<b>PRO TIP:</b> Double jump mid-air to auto-trigger a trick and score bonus points!';
     body.appendChild(tip);
   }
 
+  // ── PAGE 3: POWERUPS ──
   else if(p.type==='powerups'){
     title.textContent='POWER-UPS';
+
+    // Icon SVGs — clean geometric shapes, each colour-coded
     var pups=[
-      {col:'#FF4444',icon:'♥',name:'HEAL',desc:'Restores 2 HP instantly'},
-      {col:'#4488FF',icon:'⚡',name:'SPEED',desc:'8 second speed boost'},
-      {col:'#FFD700',icon:'★',name:'SHIELD',desc:'4 seconds of invincibility'},
-      {col:'#FF8800',icon:'⚔',name:'POWER',desc:'Doubles your attack range'},
+      {
+        col:'#FF4444',border:'#FF7777',name:'HEAL',desc:'Restores 2 HP instantly',
+        svg:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+          +'<rect x="9" y="2" width="6" height="20" rx="1" fill="#FF8888"/>'
+          +'<rect x="2" y="9" width="20" height="6" rx="1" fill="#FF8888"/>'
+          +'</svg>'
+      },
+      {
+        col:'#2266EE',border:'#66AAFF',name:'SPEED',desc:'8-second speed boost',
+        svg:'<svg width="22" height="28" viewBox="0 0 22 28" fill="none" xmlns="http://www.w3.org/2000/svg">'
+          +'<polygon points="12,2 22,12 14,12 14,26 8,26 8,12 0,12" fill="#88CCFF"/>'
+          +'</svg>'
+      },
+      {
+        col:'#AA8800',border:'#FFD700',name:'SHIELD',desc:'4 seconds of invincibility',
+        svg:'<svg width="24" height="26" viewBox="0 0 24 26" fill="none" xmlns="http://www.w3.org/2000/svg">'
+          +'<path d="M12 2 L22 6 L22 14 Q22 22 12 26 Q2 22 2 14 L2 6 Z" fill="#FFD700" opacity=".9"/>'
+          +'<path d="M12 7 L16 11 L14 11 L14 18 L10 18 L10 11 L8 11 Z" fill="#AA8800"/>'
+          +'</svg>'
+      },
+      {
+        col:'#CC5500',border:'#FF9944',name:'POWER',desc:'Doubles your attack range',
+        svg:'<svg width="28" height="24" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+          +'<line x1="2" y1="20" x2="22" y2="4" stroke="#FFA060" stroke-width="3.5" stroke-linecap="round"/>'
+          +'<circle cx="24" cy="3" r="4" fill="#FFD090"/>'
+          +'<circle cx="24" cy="3" r="2" fill="#FF8820"/>'
+          +'</svg>'
+      },
     ];
+
     pups.forEach(function(pu){
       var row=document.createElement('div');
-      row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:9px 14px;margin-bottom:7px;';
+      row.style.cssText='display:flex;align-items:center;gap:14px;background:#1a1a1a;border-radius:10px;padding:10px 12px;margin-bottom:7px;';
       var ic=document.createElement('div');
-      ic.style.cssText='width:38px;height:38px;border-radius:8px;background:'+pu.col+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;';
-      ic.textContent=pu.icon;
+      ic.style.cssText='width:44px;height:44px;border-radius:10px;background:'+pu.col
+        +';border:2px solid '+pu.border
+        +';display:flex;align-items:center;justify-content:center;flex-shrink:0;'
+        +'box-shadow:0 0 8px '+pu.col+'66;';
+      ic.innerHTML=pu.svg;
       var txt=document.createElement('div');
-      txt.innerHTML='<div style="font-size:7px;color:'+pu.col+';margin-bottom:4px;">'+pu.name+'</div><div style="font-size:5px;color:#888;line-height:1.7;">'+pu.desc+'</div>';
+      txt.innerHTML='<div style="font-size:7px;color:'+pu.border+';margin-bottom:4px;letter-spacing:.3px;">'+pu.name+'</div>'
+        +'<div style="font-size:5px;color:#777;line-height:1.8;">'+pu.desc+'</div>';
       row.appendChild(ic);row.appendChild(txt);body.appendChild(row);
     });
+
     var note=document.createElement('div');
-    note.style.cssText='font-size:5px;color:#555;text-align:center;margin-top:4px;line-height:1.8;';
-    note.textContent='Power-ups drop frequently! Grab everything you see.';
+    note.style.cssText='font-size:5px;color:#555;text-align:center;margin-top:4px;line-height:1.9;';
+    note.textContent='Grab every power-up you see. They drop often.';
     body.appendChild(note);
   }
 
@@ -360,9 +438,8 @@ function renderTut(){
   TUT_PAGES.forEach(function(_,i){
     var d=document.createElement('div');d.className='tdot'+(i===tutIdx?' on':'');dots.appendChild(d);
   });
-  // Next button
   var nxt=document.getElementById('tut-next');
-  nxt.textContent=tutIdx>=TUT_PAGES.length-1?(tutFromPause?'CLOSE':'PLAY! ►'):'NEXT ►';
+  nxt.textContent=tutIdx>=TUT_PAGES.length-1?(tutFromPause?'CLOSE':'PLAY!'):'NEXT';
 }
 
 function nextTut(){tutIdx++;if(tutIdx>=TUT_PAGES.length)closeTut();else renderTut();}
@@ -587,7 +664,7 @@ function Enemy(t,x,y){
 
 Enemy.prototype.upd=function(dt,pl,plats){
   this.aT+=dt;if(this.aT>.1){this.af=(this.af+1)%4;this.aT=0;}
-  var dx=pl.x-this.x,self=this;
+  var t=this.t,dx=pl.x-this.x,self=this;
   var land=function(extra){extra=extra||0;plats.forEach(function(p){if(self.x+self.w>p.x&&self.x<p.x+p.w&&self.y+self.h>p.y&&self.y+self.h<p.y+p.h+12+extra&&self.vy>=0){self.y=p.y-self.h;self.vy=0;}});};
 
   if(t==='gs'){
