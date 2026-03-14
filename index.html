@@ -113,21 +113,54 @@ const wrap=document.getElementById('wrap');
 let scale=1,mini=false,gState=ST.T,gScore=0,hiSc=+localStorage.getItem('trhi')||0;
 let cLv=0,lData=null,enemies=[],pickups=[],boss=null,wizard=null;
 let bSpawn=false,bDone=false,wSpawn=false,wDlg=false,wDlgT=0,noBrd=false,noBrdT=0;
-let trT=0,ttT=0,wtT=0,sfAmt=0,pCur=0,pSCool=0,pMB=[{},{},{}];
+let trT=0,ttT=0,wtT=0,sfAmt=0,pCur=0,pSCool=0,pMB=[{},{},{},{}];
 let lastT=0,player,cam;
 let parts=[],bgC=[],egT=0,egM=null,egL=0;
-const PMENU=['RESUME','RESTART','QUIT TO TITLE'];
+const PMENU=['RESUME','HOW TO PLAY','RESTART','QUIT TO TITLE'];
 
-// Tie-dye helpers
-function td(o=0,sp=1,s=90,l=55){return`hsl(${((Date.now()*.07*sp)+o)%360},${s}%,${l}%)`}
-function tda(o=0,sp=1,a=.7,s=90,l=55){return`hsla(${((Date.now()*.07*sp)+o)%360},${s}%,${l}%,${a})`}
+// Tie-dye helpers — speed and saturation scale with level
+// lv0=calm/muted, lv1=medium, lv2=vivid/fast (boss fights always intense)
+function tdMult(){
+  const base=typeof cLv!=='undefined'?cLv:0;
+  const boss=typeof gState!=='undefined'&&(gState===3)?1.5:1;
+  // lv0=0.15x, lv1=0.5x, lv2=1x — multiplied by boss boost
+  return([0.15,0.5,1.0][Math.min(base,2)])*boss;
+}
+function tdSat(){
+  const base=typeof cLv!=='undefined'?cLv:0;
+  const boss=typeof gState!=='undefined'&&(gState===3)?15:0;
+  return [45,68,90][Math.min(base,2)]+boss;
+}
+function td(o=0,sp=1,s,l=55){
+  const m=tdMult(),sat=s!==undefined?s:tdSat();
+  return`hsl(${((Date.now()*.07*sp*m)+o)%360},${sat}%,${l}%)`;
+}
+function tda(o=0,sp=1,a=.7,s,l=55){
+  const m=tdMult(),sat=s!==undefined?s:tdSat();
+  return`hsla(${((Date.now()*.07*sp*m)+o)%360},${sat}%,${l}%,${a})`;
+}
 function tdg(x1,y1,x2,y2,o=0,sp=1){
-  const g=ctx.createLinearGradient(x1,y1,x2,y2),t=Date.now()*.07*sp+o;
-  g.addColorStop(0,`hsl(${t%360},90%,55%)`);g.addColorStop(.5,`hsl(${(t+180)%360},100%,60%)`);g.addColorStop(1,`hsl(${(t+300)%360},90%,55%)`);
+  const g=ctx.createLinearGradient(x1,y1,x2,y2),m=tdMult(),t=Date.now()*.07*sp*m+o,sat=tdSat();
+  g.addColorStop(0,`hsl(${t%360},${sat}%,55%)`);
+  g.addColorStop(.5,`hsl(${(t+180)%360},${Math.min(sat+10,100)}%,60%)`);
+  g.addColorStop(1,`hsl(${(t+300)%360},${sat}%,55%)`);
   return g;
 }
 
 // Resize - portrait, fills phone width
+// Update CSS animation speeds based on level
+function updateCSSIntensity(){
+  const lv=typeof cLv!=='undefined'?cLv:0;
+  const speeds=['8s','5s','3s']; // slow at lv0, fast at lv2
+  const spd=speeds[Math.min(lv,2)];
+  document.querySelectorAll('[style*="animation"], #wrap, #bar, .bb').forEach(el=>{});
+  // Update wrap border animation speed
+  const wrapEl=document.getElementById('wrap');
+  if(wrapEl)wrapEl.style.animationDuration=spd;
+  const barEl=document.getElementById('bar');
+  if(barEl)barEl.style.animationDuration=speeds[Math.min(lv,2)];
+}
+
 function resize(){
   if(mini)return;
   const sw=Math.min(window.innerWidth,480);
@@ -201,36 +234,94 @@ function clrK(){keys._jp=false;keys._ap=false;keys._tp=false;keys._pp=false;keys
 const isMob=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 
 // ============================================================
-// SWIPE CONTROLS (mobile only - no buttons)
-// LEFT HALF:  hold left 40% = move left | hold right 40% = move right
-// RIGHT HALF: swipe UP = jump | swipe DOWN = trick | tap = attack
+// SIMPLE MOBILE CONTROLS
+// The canvas is divided into 4 big tap zones:
+//   LEFT 33%          = MOVE LEFT
+//   MIDDLE-LEFT 33%   = MOVE RIGHT  (overlaps with left slightly)
+//   TOP-RIGHT 50%x50% = JUMP
+//   BOTTOM-RIGHT 50%  = ATTACK
+// Double-tap anywhere on right = TRICK (in air)
+// Simple, obvious, works with thumbs
 // ============================================================
-const aT2={};  // active touches tracker
-const SW=30,ST2=380; // swipe threshold px, max time ms
+const aT2={};
+let lastTapT=0,lastTapSide='';
 
 function getGP(t){
   const r=cv.getBoundingClientRect();
   return{x:(t.clientX-r.left)*(GW/r.width),y:(t.clientY-r.top)*(GH/r.height)};
 }
 
+// Draw the touch zones on canvas so player always knows where to tap
+function drwTouchZones(){
+  if(!isMob)return;
+  // Semi-transparent zone indicators
+  const a=0.12;
+  // LEFT zone
+  ctx.fillStyle='rgba(100,200,255,'+a+')';
+  ctx.fillRect(0,0,GW*0.35,GH);
+  // RIGHT zone
+  ctx.fillStyle='rgba(255,150,100,'+a+')';
+  ctx.fillRect(GW*0.35,0,GW*0.65,GH);
+  // Labels
+  ctx.globalAlpha=0.45;
+  ctx.fillStyle='#fff';ctx.font='8px "Press Start 2P"';ctx.textAlign='center';
+  ctx.fillText('◀',GW*0.12,GH/2);
+  ctx.fillText('▶',GW*0.26,GH/2);
+  ctx.fillText('JUMP',GW*0.72,GH*0.3);
+  ctx.fillText('ATK',GW*0.72,GH*0.7);
+  ctx.fillText('2x=TRICK',GW*0.72,GH*0.85);
+  ctx.globalAlpha=1;ctx.textAlign='left';
+}
+
+// Show zones for first 8 seconds
+let zoneTimer=8;
+function drwZoneHint(dt){
+  if(!isMob||zoneTimer<=0)return;
+  zoneTimer-=dt;
+  ctx.globalAlpha=Math.min(1,zoneTimer/2)*0.7;
+  // Divider line
+  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+  ctx.beginPath();ctx.moveTo(GW*0.35,10);ctx.lineTo(GW*0.35,GH-10);ctx.stroke();
+  // Horizontal divider on right
+  ctx.beginPath();ctx.moveTo(GW*0.35,GH/2);ctx.lineTo(GW-10,GH/2);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='6px "Press Start 2P"';ctx.textAlign='center';
+  ctx.fillText('◀ LEFT',GW*0.12,GH/2-8);
+  ctx.fillText('RIGHT ▶',GW*0.26,GH/2+8);
+  ctx.fillText('JUMP',GW*0.67,GH*0.28);
+  ctx.fillText('ATTACK',GW*0.67,GH*0.72);
+  ctx.fillText('double tap = TRICK',GW*0.67,GH*0.88);
+  ctx.globalAlpha=1;ctx.textAlign='left';
+}
+
 cv.addEventListener('touchstart',e=>{
   e.preventDefault();
   Array.from(e.changedTouches).forEach(t=>{
     const p=getGP(t),now=Date.now();
-    aT2[t.identifier]={sx:p.x,sy:p.y,cx:p.x,cy:p.y,st:now,side:p.x<GW/2?'L':'R'};
+    aT2[t.identifier]={sx:p.x,sy:p.y,st:now};
+    // Title/GO/Win screens - tap to continue
     if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();return;}
+    // Pause menu tap
     if(gState===ST.PA){
-      const r2=cv.getBoundingClientRect();
-      const cx2=(t.clientX-r2.left)*(GW/r2.width),cy2=(t.clientY-r2.top)*(GH/r2.height);
-      pMB.forEach((b,i)=>{if(b.x&&cx2>=b.x&&cx2<=b.x+b.w&&cy2>=b.y&&cy2<=b.y+b.h){pCur=i;setTimeout(doSel,80);}});
+      pMB.forEach((b,i)=>{if(b.x&&p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){pCur=i;setTimeout(doSel,80);}});
       return;
     }
     if(gState!==ST.P&&gState!==ST.B)return;
     getAC();
-    if(p.x<GW/2){
-      // Left zone: left 40% = left, middle-left 40% = right
-      if(p.x<GW*0.22){touch.L=true;touch.R=false;}
-      else{touch.R=true;touch.L=false;}
+    // LEFT ZONE (left 35%) - movement
+    if(p.x<GW*0.18){touch.L=true;touch.R=false;}
+    else if(p.x<GW*0.35){touch.R=true;touch.L=false;}
+    else{
+      // RIGHT ZONE - actions
+      // Check double-tap for trick
+      const dt2=now-lastTapT;
+      if(dt2<350&&lastTapSide==='R'&&!touch.jp){
+        touch.tp=true;keys._tp=true; // double tap = trick
+      }
+      lastTapT=now;lastTapSide='R';
+      // Top half = jump, bottom half = attack
+      if(p.y<GH/2){touch.jp=true;keys._jp=true;}
+      else{keys._ap=true;}
     }
   });
 },{passive:false});
@@ -240,11 +331,10 @@ cv.addEventListener('touchmove',e=>{
   Array.from(e.changedTouches).forEach(t=>{
     if(!aT2[t.identifier])return;
     const p=getGP(t);
-    aT2[t.identifier].cx=p.x;aT2[t.identifier].cy=p.y;
-    // Update movement if left finger slides
-    if(aT2[t.identifier].side==='L'){
-      if(p.x<GW*0.22){touch.L=true;touch.R=false;}
-      else if(p.x<GW/2){touch.R=true;touch.L=false;}
+    // Only update movement for left-zone touches
+    if(aT2[t.identifier].sx<GW*0.35){
+      if(p.x<GW*0.18){touch.L=true;touch.R=false;}
+      else if(p.x<GW*0.35){touch.R=true;touch.L=false;}
       else{touch.L=false;touch.R=false;}
     }
   });
@@ -253,27 +343,9 @@ cv.addEventListener('touchmove',e=>{
 cv.addEventListener('touchend',e=>{
   e.preventDefault();
   Array.from(e.changedTouches).forEach(t=>{
-    const tr=aT2[t.identifier];
-    if(!tr){return;}
-    const dx=tr.cx-tr.sx,dy=tr.cy-tr.sy;
-    const elapsed=Date.now()-tr.st;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if((gState===ST.P||gState===ST.B)&&tr.side==='R'){
-      if(dist>SW&&elapsed<ST2){
-        // Swipe gesture on right half
-        if(Math.abs(dy)>Math.abs(dx)){
-          if(dy<0){touch.jp=true;keys._jp=true;}  // swipe UP = jump
-          else{touch.tp=true;keys._tp=true;}       // swipe DOWN = trick
-        } else {
-          keys._ap=true;                           // swipe LEFT/RIGHT = attack
-        }
-      } else if(dist<20&&elapsed<250){
-        keys._ap=true;                             // tap right = attack
-      }
-    }
     delete aT2[t.identifier];
-    // Release movement only if no left touches remain
-    if(!Object.values(aT2).some(a=>a.side==='L')){touch.L=false;touch.R=false;}
+    // Release movement if no left-zone touches remain
+    if(!Object.values(aT2).some(a=>a.sx<GW*0.35)){touch.L=false;touch.R=false;}
   });
 },{passive:false});
 
@@ -283,141 +355,131 @@ cv.addEventListener('touchcancel',e=>{
 },{passive:false});
 
 // ============================================================
-// TUTORIAL SYSTEM - auto-detects mobile vs desktop
+// TUTORIAL SYSTEM
+// Simple, short, plain English. Auto-detects device.
+// Available from pause menu too.
 // ============================================================
-const TUT_KEY='trTutDone';
-let tutIdx=0;
+const TUT_KEY='trTutV3';
+let tutIdx=0,tutFromPause=false;
 
-// MOBILE tutorial steps (swipe controls)
 const MOB_TUT=[
   {
-    icon:'👆',col:'hsl(200,80%,35%)',
-    title:'MOVE',
-    lines:['HOLD LEFT SIDE of screen','◀ tap far-left = move left','▶ tap mid-left = move right','Slide finger to change dir!']
+    title:'HOW TO PLAY',
+    icon:'🛹',
+    lines:[
+      'TAP LEFT SIDE to skate left',
+      'TAP RIGHT SIDE to skate right',
+      'TAP TOP-RIGHT to jump',
+      'TAP BOTTOM-RIGHT to attack',
+      'DOUBLE-TAP RIGHT for a trick!'
+    ]
   },
   {
-    icon:'⬆️',col:'hsl(120,70%,28%)',
-    title:'JUMP',
-    lines:['SWIPE UP on right side','of the screen to jump!','In Level 2 you unlock','DOUBLE JUMP — swipe up twice!']
-  },
-  {
-    icon:'⬇️',col:'hsl(280,70%,32%)',
-    title:'DO TRICKS',
-    lines:['SWIPE DOWN on right side','while in the air to do','a skate trick! Earns bonus','points + looks sick! 🛹']
-  },
-  {
-    icon:'👊',col:'hsl(10,75%,30%)',
-    title:'ATTACK',
-    lines:['TAP the right side of','the screen to whip your','lace at enemies!','Defeat bosses to advance!']
-  },
-  {
-    icon:'🛹',col:'hsl(45,80%,28%)',
-    title:'THE QUEST',
-    lines:['Skate through 3 worlds.','Defeat bosses to progress.','Viktor STEALS your board!','Find the Wizard — GLOW BOARD!']
+    title:'TIPS',
+    icon:'⭐',
+    lines:[
+      'Attack enemies to defeat them',
+      'Jump on platforms to explore',
+      'Do tricks in the air for points',
+      'Defeat bosses to reach next level',
+      'Watch out — Viktor steals your board!'
+    ]
   }
 ];
 
-// DESKTOP tutorial steps (keyboard controls)
 const DSK_TUT=[
   {
-    icon:'⌨️',col:'hsl(200,80%,35%)',
-    title:'MOVE',
-    lines:['A / ← = skate left','D / → = skate right','Hold key to keep moving','Release to slow down']
+    title:'HOW TO PLAY',
+    icon:'⌨️',
+    lines:[
+      'A or ← = move left',
+      'D or → = move right',
+      'SPACE or ↑ = jump',
+      'X or Z = attack',
+      'C or ↓ (in air) = trick!'
+    ]
   },
   {
-    icon:'🆙',col:'hsl(120,70%,28%)',
-    title:'JUMP',
-    lines:['SPACE or W or ↑ to jump','Press again in air for','DOUBLE JUMP (Level 2+)!','Land on platforms to grind!']
-  },
-  {
-    icon:'🔽',col:'hsl(280,70%,32%)',
-    title:'DO TRICKS',
-    lines:['Press C or S or ↓','while in the AIR to do','a skate trick!','Trick score: +50 pts (150 on Glow Board)']
-  },
-  {
-    icon:'⚔️',col:'hsl(10,75%,30%)',
-    title:'ATTACK',
-    lines:['Press X or Z to whip','your lace at enemies.','0.5 second cooldown.','Attack bosses to defeat them!']
-  },
-  {
-    icon:'⏸',col:'hsl(45,80%,28%)',
-    title:'OTHER KEYS',
-    lines:['P = pause / unpause','ENTER = confirm menus','ESC / P in pause = resume','Boss phases get harder — good luck!']
+    title:'TIPS',
+    icon:'⭐',
+    lines:[
+      'Attack enemies to defeat them',
+      'Jump on platforms to explore',
+      'Do tricks in the air for points',
+      'P key = pause the game',
+      'Defeat bosses to reach next level'
+    ]
   }
 ];
 
 function buildTut(){
   const steps=isMob?MOB_TUT:DSK_TUT;
-  const title=document.getElementById('tut-title');
-  const body=document.getElementById('tut-body');
-  const dots=document.getElementById('tut-dots');
-  title.textContent=isMob?'SWIPE CONTROLS':'KEYBOARD CONTROLS';
-  // Build dots
-  dots.innerHTML='';
-  steps.forEach((_,i)=>{
-    const d=document.createElement('div');
-    d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(i===0?'#fff':'#333')+';transition:background .2s;';
-    d.id='dot'+i;dots.appendChild(d);
-  });
-  renderTutStep(0);
+  const el=document.getElementById('tut');
+  if(!el)return;
+  el.style.display='flex';
+  renderTutStep(tutIdx);
 }
 
 function renderTutStep(i){
   const steps=isMob?MOB_TUT:DSK_TUT;
+  if(i>=steps.length){closeTut();return;}
   const s=steps[i];
-  const body=document.getElementById('tut-body');
-  body.innerHTML='';
-  // Icon + title row
-  const row=document.createElement('div');
-  row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:12px;';
-  const icon=document.createElement('div');
-  icon.style.cssText='width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;background:'+s.col+';border:2px solid rgba(255,255,255,0.2);animation:pulse 1.5s ease-in-out infinite;';
-  icon.textContent=s.icon;
-  const info=document.createElement('div');
-  info.style.cssText='display:flex;flex-direction:column;gap:6px;';
-  const ttl=document.createElement('div');
-  ttl.style.cssText='font-family:"Press Start 2P",monospace;font-size:9px;color:#fff;';
-  ttl.textContent=s.title;
-  info.appendChild(ttl);
-  s.lines.forEach(ln=>{
-    const lEl=document.createElement('div');
-    lEl.style.cssText='font-family:"Press Start 2P",monospace;font-size:5.5px;color:#aaa;line-height:1.7;';
-    lEl.textContent=ln;
-    info.appendChild(lEl);
+  // Title
+  const titleEl=document.getElementById('tut-title');
+  if(titleEl)titleEl.textContent=s.title;
+  // Body
+  const bodyEl=document.getElementById('tut-body');
+  if(!bodyEl)return;
+  bodyEl.innerHTML='';
+  // Icon row
+  const iconRow=document.createElement('div');
+  iconRow.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:14px 12px;';
+  const iconDiv=document.createElement('div');
+  iconDiv.style.cssText='font-size:32px;flex-shrink:0;width:50px;text-align:center;';
+  iconDiv.textContent=s.icon;
+  const listDiv=document.createElement('div');
+  listDiv.style.cssText='display:flex;flex-direction:column;gap:8px;';
+  s.lines.forEach(line=>{
+    const d=document.createElement('div');
+    d.style.cssText='font-family:"Press Start 2P",monospace;font-size:6px;color:#ddd;line-height:1.6;';
+    d.textContent=line;
+    listDiv.appendChild(d);
   });
-  row.appendChild(icon);row.appendChild(info);body.appendChild(row);
-  // Progress indicator
-  const prog=document.createElement('div');
-  prog.style.cssText='font-family:"Press Start 2P",monospace;font-size:4.5px;color:#555;text-align:center;';
-  prog.textContent=(i+1)+' / '+steps.length;
-  body.appendChild(prog);
-  // Update dots
-  (isMob?MOB_TUT:DSK_TUT).forEach((_,j)=>{
-    const d=document.getElementById('dot'+j);
-    if(d)d.style.background=j===i?'#fff':'#333';
-  });
-  // Update next button text
+  iconRow.appendChild(iconDiv);iconRow.appendChild(listDiv);bodyEl.appendChild(iconRow);
+  // Progress dots
+  const dots=document.getElementById('tut-dots');
+  if(dots){
+    dots.innerHTML='';
+    steps.forEach((_,j)=>{
+      const d=document.createElement('div');
+      d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(j===i?'#fff':'#444')+';';
+      dots.appendChild(d);
+    });
+  }
+  // Next button label
   const nxt=document.getElementById('tut-next');
-  if(nxt)nxt.textContent=i===steps.length-1?'PLAY! ▶':'NEXT ▶';
+  if(nxt)nxt.textContent=i>=steps.length-1?(tutFromPause?'CLOSE':'PLAY!'):'NEXT ▶';
 }
 
 function nextTutStep(){
-  const steps=isMob?MOB_TUT:DSK_TUT;
   tutIdx++;
-  if(tutIdx>=steps.length){closeTut();}
-  else{renderTutStep(tutIdx);}
+  const steps=isMob?MOB_TUT:DSK_TUT;
+  if(tutIdx>=steps.length)closeTut();
+  else renderTutStep(tutIdx);
 }
 
 function closeTut(){
-  document.getElementById('tut').style.display='none';
+  const el=document.getElementById('tut');
+  if(el)el.style.display='none';
   localStorage.setItem(TUT_KEY,'1');
   getAC();
+  if(tutFromPause){tutFromPause=false;}
 }
 
-function showTut(){
+function showTut(fromPause){
   tutIdx=0;
+  tutFromPause=!!fromPause;
   buildTut();
-  document.getElementById('tut').style.display='flex';
 }
 
 document.getElementById('tut-next').addEventListener('click',nextTutStep);
@@ -602,12 +664,89 @@ class Boss{
     if(t==='kn'){this.w=52;this.h=48;this.hp=10;this.mhp=10;this.name='THE KNOTTER';}
     else if(t==='vk'){this.w=56;this.h=52;this.hp=15;this.mhp=15;this.name='VELCRO VIKTOR';}
     else{this.w=72;this.h=64;this.hp=30;this.mhp=30;this.name='THE UN-LACED KING';}
-    this.y=GH-24-this.h;this.vx=(Math.random()>.5?1:-1)*1.1;
+    // === DRAMATIC ENTRANCE — unique per boss ===
+    this.entDone=false;
+    this.entT=0;      // counts UP from 0
+    this.entMax=2.4;  // total entrance duration
+    this.landShake=0;
+    this.targetY=GH-24-this.h;
+    this.vx=0;
+    // THE KNOTTER: spins in from dead center, bounces on landing
+    if(t==='kn'){this.x=GW/2-this.w/2;this.y=-this.h-10;this.spinAngle=0;}
+    // VELCRO VIKTOR: slides in fast from the RIGHT side of screen
+    else if(t==='vk'){this.x=GW+this.w;this.y=this.targetY;this.slideIn=true;}
+    // UN-LACED KING: rises from BELOW the ground with earthquake rumble
+    else{this.x=GW/2-this.w/2;this.y=GH+this.h;this.riseUp=true;}
   }
   upd(dt,pl){
     if(!this.alive)return;
     this.aT2+=dt;if(this.aT2>.1){this.af=(this.af+1)%4;this.aT2=0;}
-    if(this.hF>0)this.hF-=dt;this.aT+=dt;this.sT+=dt;
+    if(this.hF>0)this.hF-=dt;if(this.landShake>0)this.landShake-=dt;
+    // === ENTRANCE ANIMATION ===
+    if(!this.entDone){
+      this.entT+=dt;
+      const prog=Math.min(1,this.entT/this.entMax);
+
+      if(this.t==='kn'){
+        // THE KNOTTER: warning flash then DROPS spinning from sky
+        this.spinAngle+=dt*12*(1+prog*4);
+        if(this.entT>0.8){ // drop after 0.8s warning
+          const dropProg=Math.min(1,(this.entT-0.8)/1.2);
+          this.y=-this.h-10+dropProg*dropProg*(this.targetY+this.h+10);
+        }
+        if(this.y>=this.targetY){
+          this.y=this.targetY;this.entDone=true;this.vx=1.1;
+          this.landShake=0.6;sfAmt=0.8;
+          for(let i=0;i<8;i++)spP(this.x+this.w/2,this.y+this.h,td(i*45,3),6,4);
+          spCnf(25);SFX.bHit();
+          // Bounce knot ring particles outward
+          for(let i=0;i<12;i++){const a=(Math.PI*2/12)*i;parts.push({x:this.x+this.w/2,y:this.y+this.h/2,vx:Math.cos(a)*6,vy:Math.sin(a)*6,l:1,col:'#FF8C00',sz:4});}
+        }
+      }
+      else if(this.t==='vk'){
+        // VELCRO VIKTOR: ROCKETS in from right, skids to a stop
+        const ease=1-Math.pow(1-prog,3);
+        this.x=GW+this.w-(GW+this.w-(GW-this.w-30))*ease;
+        if(prog>0.85&&!this.entDone){
+          // Skid sparks
+          if(Math.random()<0.4)spP(this.x,this.y+this.h,td(40,3),3,2);
+        }
+        if(prog>=1){
+          this.x=GW-this.w-30;this.entDone=true;this.vx=-1.1;
+          this.landShake=0.5;sfAmt=0.75;
+          for(let i=0;i<6;i++)spP(this.x+this.w/2,this.y+this.h/2,td(240+i*20,3),5,3);
+          spCnf(20);SFX.bHit();
+          // Velcro rip particles
+          for(let i=0;i<8;i++)parts.push({x:this.x+Math.random()*this.w,y:this.y+Math.random()*this.h,vx:(Math.random()-.5)*5,vy:-2-Math.random()*3,l:1,col:i%2?'#3333BB':'#BB33BB',sz:3+Math.random()*3});
+        }
+      }
+      else{
+        // UN-LACED KING: RISES FROM UNDERGROUND with screen quake
+        // Ground cracks first, then rises
+        if(this.entT<1.0){
+          // Rumble phase — shake screen
+          this.landShake=0.15;
+          if(Math.random()<dt*8)spP(GW/2+(Math.random()-.5)*80,GH-24,td(240+Math.random()*60,2),4,2);
+        } else {
+          const riseProg=Math.min(1,(this.entT-1.0)/1.4);
+          const ease=1-Math.pow(1-riseProg,2);
+          this.y=GH+this.h-(GH+this.h-this.targetY)*ease;
+          this.landShake=riseProg>0.5?0.2:0;
+          // Rising particles
+          if(Math.random()<0.3)spP(this.x+Math.random()*this.w,this.y+this.h,td(260,2),3,1.5);
+        }
+        if(this.entT>=2.4){
+          this.y=this.targetY;this.entDone=true;this.vx=1.1;
+          this.landShake=0.8;sfAmt=1.0;
+          for(let i=0;i<12;i++)spP(this.x+this.w/2,this.y+this.h,td(i*30,3),8,5+i*.3);
+          spCnf(40);SFX.bDie();
+          // Crown explosion
+          for(let i=0;i<16;i++){const a=(Math.PI*2/16)*i;parts.push({x:this.x+this.w/2,y:this.y+8,vx:Math.cos(a)*7,vy:Math.sin(a)*7-2,l:1,col:td(i*22,3,100,65),sz:5});}
+        }
+      }
+      return;
+    }
+    this.aT+=dt;this.sT+=dt;
     if(this.t==='ul'){if(this.hp<=20&&this.ph===1){this.ph=2;sfAmt=.6;SFX.bHit();}if(this.hp<=10&&this.ph===2){this.ph=3;sfAmt=.8;SFX.bHit();}}
     const sp=this.t==='ul'&&this.ph===3?1.9:1.1;this.x+=this.vx*sp;if(this.x<=0||this.x+this.w>=GW-10)this.vx*=-1;
     if(this.t==='kn'){this.ra+=this.vx*.08;const iv=this.ph>=2?1.8:3;if(this.aT>=iv){this.aT=0;this.fp('tg',pl);if(this.ph>=3)this.fp('tg',pl,.3);}}
@@ -629,12 +768,107 @@ class Boss{
   die(){this.bS='dy';this.dyT=2.5;sfAmt=1.0;}
   drw(){
     if(!this.alive&&this.bS!=='dy')return;
-    const x=this.x,y=this.y;if(this.hF>0)ctx.globalAlpha=.45;
+    const x=this.x,y=this.y;
+    // Landing screen shake
+    if(this.landShake>0){ctx.save();ctx.translate((Math.random()-.5)*8*this.landShake,(Math.random()-.5)*5*this.landShake);}
+    if(this.hF>0)ctx.globalAlpha=.45;
+    // === ENTRANCE VISUALS — unique per boss ===
+    if(!this.entDone){
+      const prog=Math.min(1,this.entT/this.entMax);
+      if(this.t==='kn'){
+        // Warning flash + spinning descent trail
+        if(this.entT<0.8){
+          // Flashing warning at center
+          ctx.globalAlpha=Math.abs(Math.sin(this.entT*18))*.9;
+          ctx.fillStyle='#FF8C00';ctx.font='18px "Press Start 2P"';ctx.textAlign='center';
+          ctx.fillText('⚠',GW/2,GH/2-20);
+          ctx.font='7px "Press Start 2P"';ctx.fillStyle='#fff';
+          ctx.fillText('THE KNOTTER APPROACHES',GW/2,GH/2+4);
+          ctx.globalAlpha=1;ctx.textAlign='left';
+        }
+        // Spinning trail during drop
+        if(this.entT>=0.8){
+          for(let i=1;i<=5;i++){
+            ctx.globalAlpha=0.1*i;
+            ctx.save();ctx.translate(this.x+this.w/2,this.y+this.h/2);
+            ctx.rotate(this.spinAngle-i*.5);
+            ctx.fillStyle=td(i*25,3,90,55);
+            ctx.beginPath();ctx.arc(0,0,24-i*2,0,Math.PI*2);ctx.fill();
+            ctx.restore();
+          }
+          ctx.globalAlpha=1;
+        }
+      }
+      else if(this.t==='vk'){
+        // Speed lines as Viktor rockets across
+        ctx.globalAlpha=0.6;
+        for(let i=0;i<6;i++){
+          ctx.strokeStyle=td(240+i*10,2,90,60);ctx.lineWidth=2-i*.2;
+          ctx.beginPath();ctx.moveTo(this.x+this.w+i*8,this.y+5+i*7);ctx.lineTo(GW+20,this.y+5+i*7);ctx.stroke();
+        }
+        // Viktor name slam
+        ctx.globalAlpha=Math.min(1,prog*3);
+        ctx.fillStyle=td(240,2,90,65);ctx.font='8px "Press Start 2P"';ctx.textAlign='center';
+        ctx.fillText('VELCRO VIKTOR!',GW/2,GH/2);
+        ctx.globalAlpha=1;ctx.textAlign='left';
+      }
+      else{
+        // UN-LACED KING: ground crack effect + rumble text
+        if(this.entT<1.0){
+          // Ground crack lines
+          ctx.globalAlpha=Math.min(1,this.entT*3)*0.8;
+          ctx.strokeStyle='#8800CC';ctx.lineWidth=3;
+          ctx.beginPath();ctx.moveTo(GW/2,GH-24);
+          for(let i=0;i<5;i++){ctx.lineTo(GW/2+(Math.random()-.5)*40,GH-24-i*8);}
+          ctx.stroke();
+          ctx.strokeStyle='#FF2200';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(GW/2-20,GH-24);ctx.lineTo(GW/2+20,GH-24);ctx.stroke();
+          // Rumble warning text
+          const shk=(Math.random()-.5)*4;
+          ctx.globalAlpha=0.9;ctx.fillStyle='#FF2200';
+          ctx.font='7px "Press Start 2P"';ctx.textAlign='center';
+          ctx.fillText('...something stirs...',GW/2+shk,GH/2+shk);
+          ctx.globalAlpha=1;ctx.textAlign='left';
+        } else {
+          // Rising silhouette glow
+          const riseProg=Math.min(1,(this.entT-1.0)/1.4);
+          ctx.globalAlpha=riseProg*.4;
+          ctx.fillStyle=this.ph===3?'#FF2200':this.ph===2?'#8800CC':'#4466FF';
+          ctx.fillRect(this.x-4,this.y,this.w+8,this.h+24);
+          ctx.globalAlpha=riseProg*.8;
+          ctx.fillStyle='#fff';ctx.font='8px "Press Start 2P"';ctx.textAlign='center';
+          ctx.fillText('THE UN-LACED KING',GW/2,GH/2-10);
+          ctx.fillStyle=td(0,3,100,65);ctx.font='5px "Press Start 2P"';
+          ctx.fillText('RISES...',GW/2,GH/2+8);
+          ctx.globalAlpha=1;ctx.textAlign='left';
+        }
+      }
+    }
     if(this.t==='kn'){ctx.save();ctx.translate(x+this.w/2,y+this.h/2);ctx.rotate(this.ra);ctx.fillStyle='#8B4513';ctx.beginPath();ctx.arc(0,0,24,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#FF8C00';ctx.lineWidth=4;for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(0,0,14,i*Math.PI/3,(i+.5)*Math.PI/3);ctx.stroke();}ctx.fillStyle='#FFF';ctx.fillRect(-10,-8,8,8);ctx.fillRect(4,-8,8,8);ctx.fillStyle='#000';ctx.fillRect(-8,-6,4,4);ctx.fillRect(6,-6,4,4);ctx.restore();}
     if(this.t==='vk'){ctx.fillStyle='#3333BB';ctx.fillRect(x,y,28,this.h);ctx.fillStyle='#BB33BB';ctx.fillRect(x+28,y,28,this.h);ctx.fillStyle='#FFF';ctx.fillRect(x+4,y+8,12,12);ctx.fillRect(x+40,y+8,12,12);ctx.fillStyle='#000';ctx.fillRect(x+7,y+11,6,6);ctx.fillRect(x+43,y+11,6,6);for(let i=0;i<7;i++){ctx.fillStyle=i%2?'#3333BB':'#BB33BB';ctx.fillRect(x+i*8,y+this.h-10,7,10);}ctx.fillStyle='#222';ctx.fillRect(x+26,y,4,this.h);}
     if(this.t==='ul'){const cl=this.ph===3?'#FF2200':this.ph===2?'#8800CC':'#334466';ctx.fillStyle=cl;ctx.fillRect(x,y+20,this.w,this.h-20);ctx.fillStyle='#FFF';ctx.fillRect(x,y+this.h-16,this.w,16);ctx.fillStyle='#FF6666';ctx.fillRect(x+16,y+8,this.w-32,20);const ec=this.ph>=2?'#F00':'#FFD700';for(let i=0;i<3;i++){ctx.fillStyle=ec;ctx.fillRect(x+8+i*22,y+12,10,10);ctx.fillStyle='#000';ctx.fillRect(x+10+i*22,y+14,6,6);}ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x+8,y+10);ctx.lineTo(x+20,y+14);ctx.stroke();ctx.beginPath();ctx.moveTo(x+this.w-8,y+10);ctx.lineTo(x+this.w-20,y+14);ctx.stroke();}
     ctx.globalAlpha=1;this.pjs.forEach(p=>p.drw());
-    const bw=160,bx=(GW-bw)/2,by=14;ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(bx,by,bw,10);const pct=Math.max(0,this.hp/this.mhp);ctx.fillStyle=pct>.5?td(0,1):pct>.25?td(30,1):'#E53935';ctx.fillRect(bx,by,bw*pct,10);ctx.strokeStyle=td(180,.5);ctx.lineWidth=1;ctx.strokeRect(bx,by,bw,10);ctx.fillStyle='#FFF';ctx.font='5px "Press Start 2P"';ctx.textAlign='center';ctx.fillText(this.name,GW/2,by-3);ctx.textAlign='left';
+    if(this.landShake>0)ctx.restore();
+    // HP bar — only show once landed
+    if(this.entDone){
+      const bw=160,bx=(GW-bw)/2,by=14;
+      ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(bx,by,bw,10);
+      const pct=Math.max(0,this.hp/this.mhp);
+      ctx.fillStyle=pct>.5?td(0,1):pct>.25?td(30,1):'#E53935';
+      ctx.fillRect(bx,by,bw*pct,10);
+      ctx.strokeStyle=td(180,.5);ctx.lineWidth=1;ctx.strokeRect(bx,by,bw,10);
+      // Boss name with dramatic glow effect
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(bx,by-14,bw,12);
+      ctx.fillStyle=td(0,1,90,70);ctx.font='5px "Press Start 2P"';ctx.textAlign='center';
+      ctx.fillText(this.name,GW/2,by-5);
+      // Phase indicator for un-laced king
+      if(this.t==='ul'&&this.ph>1){
+        ctx.fillStyle=this.ph===3?'#FF2200':'#FF8800';
+        ctx.font='4px "Press Start 2P"';
+        ctx.fillText('PHASE '+this.ph,GW/2,by+18);
+      }
+      ctx.textAlign='left';
+    }
   }
 }
 
@@ -763,7 +997,12 @@ function drwNBD(){if(!noBrd)return;ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(1
 // Pause selection
 function doSel(){
   if(pCur===0){gState=ST.P;pbtn.textContent='⏸ PAUSE';}
-  else if(pCur===1){restart();}
+  else if(pCur===1){
+    // HOW TO PLAY from pause
+    gState=ST.P; // keep game paused
+    showTut(true);
+  }
+  else if(pCur===2){restart();}
   else{stopM();gState=ST.T;ttT=0;parts=[];bgC=[];pbtn.textContent='⏸ PAUSE';}
   pCur=0;
 }
@@ -778,6 +1017,7 @@ function initLv(i){
   if(i>=1)player.dj=true;
   if(i===2&&!player.gB)player.hB=false;
   startM(i);
+  updateCSSIntensity();
 }
 
 // Restart
