@@ -1745,59 +1745,232 @@ function Boss(t,x){this.t=t;this.x=x;this.y=0;this.vx=0;this.vy=0;this.alive=tru
   // entDone=false means he's in idle/waiting state (not yet activated)
   // When player enters arena, entDone flips to true and fight begins
   this.entDone=false;this.entT=0;this.activated=false;this.landShake=0;
-  this.bossX=x; // store original world X
+  this.bossX=x;
   this.x=x;this.y=this.targetY;
-  if(t==='kn'){this.spinAngle=0;}
+  this.og=true;  // on ground flag
+  this.jCool=0;  // jump cooldown
+  this.dashCool=0; // viktor dash cooldown
+  this.spinAngle=0;
+  // Base speed per boss: Knotter fastest, King slowest but grows most
+  this.baseSpd=t==='kn'?1.6:t==='vk'?1.4:1.1;
 }
 Boss.prototype.upd=function(dt,pl){
   if(!this.alive)return;
 
-  // NOT YET ACTIVATED — idle pacing, waiting for player to enter arena
+  // ── IDLE: not yet encountered ──
   if(!this.activated){
     this.entT=(this.entT||0)+dt;
-    this.x=this.bossX;  // stay at arena entrance
-    this.y=this.targetY+Math.sin(this.entT*1.5)*3; // gentle bob
+    this.x=this.bossX;
+    this.y=this.targetY+Math.sin(this.entT*1.5)*3;
     return;
   }
 
-  // First frame of activation — quick stomp entrance
+  // ── ENTRANCE STOMP ──
   if(!this.entDone){
     this.entT=(this.entT||0)+dt;
     var prog=Math.min(1,this.entT/0.5);
-    this.y=this.targetY-Math.sin(prog*Math.PI)*28;
+    this.y=this.targetY-Math.sin(prog*Math.PI)*32;
     if(prog>=1){
-      this.y=this.targetY;this.entDone=true;this.vx=1.1;
-      this.landShake=0.5;sfAmt=0.8;
-      for(var bi=0;bi<10;bi++)spP(this.x+this.w/2,this.y+this.h,td(bi*36,3),6,3);
-      spCnf(20);SFX.bHit();
+      this.y=this.targetY;this.entDone=true;
+      this.og=true;this.vy=0;
+      this.vx=(pl.x>this.x?1:-1)*this.baseSpd;
+      this.landShake=0.6;sfAmt=0.8;
+      for(var bi=0;bi<12;bi++)spP(this.x+this.w/2,this.y+this.h,td(bi*30,3),6,3);
+      spCnf(22);SFX.bHit();
     }
     return;
   }
-  this.aT2+=dt;if(this.aT2>.1){this.af=(this.af+1)%4;this.aT2=0;}
+
+  // ── COMMON TIMERS ──
+  this.aT2+=dt;if(this.aT2>.08){this.af=(this.af+1)%4;this.aT2=0;}
   if(this.landShake>0)this.landShake-=dt;
-  // (entrance handled above)
-  this.aT+=dt;this.sT+=dt;
-  if(this.t==='ul'){if(this.hp<=20&&this.ph===1){this.ph=2;sfAmt=.6;SFX.bHit();}if(this.hp<=10&&this.ph===2){this.ph=3;sfAmt=.8;SFX.bHit();}}
-  // Patrol within arena (world coords)
-  var sp=this.t==='ul'&&this.ph===3?1.8:1.1;
-  this.x+=this.vx*sp;
-  var pL=this.bossX-10,pR=this.bossX+this.arenaW-this.w-10;
-  if(this.x<pL){this.x=pL;this.vx=Math.abs(this.vx);}
-  if(this.x>pR){this.x=pR;this.vx=-Math.abs(this.vx);}
-  if(this.t==='kn'){this.ra+=this.vx*.08;var iv=this.ph>=2?1.8:3;if(this.aT>=iv){this.aT=0;this.fp('tg',pl);if(this.ph>=3)this.fp('tg',pl,.3);}}
-  if(this.t==='vk'){if(this.aT>=2.5){this.aT=0;this.fp('st',null);if(this.hp<this.mhp*.5)this.fp('st',null,.4);}if(this.sT>=3.5){this.sT=0;this.vx=(pl.x>this.x?1:-1)*4;setTimeout(function(){this.vx=(Math.random()>.5?1:-1)*1.1;}.bind(this),700);}if(!this.grab&&rov(this,pl)&&Math.abs(this.vx)>2){this.grab=true;this.gT=2;pl.st=2;}if(this.grab){this.gT-=dt;pl.x=this.x+(this.vx>0?-27:this.w+5);pl.vx=0;pl.vy=0;if(this.gT<=0||keys._jp||touch.jp){this.grab=false;SFX.jump();}}}
-  if(this.t==='ul'){var si=this.ph===3?1.4:2.5;if(this.aT>=si){this.aT=0;this.fp('sw',null);if(this.ph>=2)this.fp('to',pl);this.shT=.3;spP(this.x+this.w/2,this.y+this.h,td(240,2),5);}if(this.shT>0)this.shT-=dt;}
-  this.pjs=this.pjs.filter(function(p){return p.alive;});this.pjs.forEach(function(p){p.upd(dt,pl);});
-  // Hit detection: _h locked for 0.3s so one hit per swing
   if(this.hF>0){this.hF-=dt;if(this.hF<=0)this._h=false;}
+  this.aT+=dt;this.sT+=dt;
+  if(this.jCool>0)this.jCool-=dt;
+
+  // ── PHASE TRANSITIONS (Un-Laced King) ──
+  if(this.t==='ul'){
+    if(this.hp<=20&&this.ph===1){this.ph=2;sfAmt=.65;SFX.bHit();spCnf(15);}
+    if(this.hp<=10&&this.ph===2){this.ph=3;sfAmt=.9;SFX.bHit();spCnf(25);}
+  }
+  if(this.t==='vk'){
+    if(this.hp<=8&&this.ph===1){this.ph=2;sfAmt=.7;SFX.bHit();}
+  }
+
+  // ── PHYSICS — gravity + arena-bounded platforms ──
+  this.vy+=GR*0.9;
+  this.x+=this.vx;
+  this.y+=this.vy;
+
+  // Arena floor and platform collision
+  var self=this;
+  var arenaFloor=this.targetY; // ground level for this boss
+  var landed=false;
+  // Check arena platforms from lData
+  if(typeof lData!=='undefined'&&lData.plat){
+    lData.plat.forEach(function(p){
+      if(self.x+self.w>p.x&&self.x<p.x+p.w&&
+         self.y+self.h>p.y&&self.y+self.h<p.y+p.h+14&&
+         self.vy>=0){
+        self.y=p.y-self.h;self.vy=0;landed=true;
+        if(p.type==='cv')self.x+=p.d*0.7;
+      }
+    });
+  }
+  // Ground/floor fallback
+  if(this.y>=arenaFloor){
+    this.y=arenaFloor;this.vy=0;landed=true;
+  }
+  if(landed)this.og=true;else this.og=false;
+
+  // ── ARENA BOUNDS — hard walls at bossX and bossX+arenaW ──
+  var aL=this.bossX-8;
+  var aR=this.bossX+(this.arenaW||340)-this.w-8;
+  if(this.x<aL){this.x=aL;this.vx=Math.abs(this.vx);}
+  if(this.x>aR){this.x=aR;this.vx=-Math.abs(this.vx);}
+
+  // ── BOSS-SPECIFIC AI ──
+  var dx=pl.x-this.x;
+  var absDx=Math.abs(dx);
+  var facing=dx>0?1:-1;
+  var ph=this.ph;
+
+  // Speed tiers per phase
+  var spd=this.baseSpd*(ph===3?1.9:ph===2?1.5:1.0);
+
+  if(this.t==='kn'){
+    // THE KNOTTER — bouncy, aggressive chaser
+    // Spin animation linked to movement
+    this.ra+=this.vx*0.09;
+
+    // Chase player horizontally
+    this.vx+=(facing*spd-this.vx)*0.08;
+
+    // Jump AI: jump toward player if they're higher, or jump to close distance
+    if(this.og&&this.jCool<=0){
+      var shouldJump=false;
+      // Jump if player is above
+      if(pl.y<this.y-20)shouldJump=true;
+      // Jump periodically to be unpredictable
+      if(this.sT>=(ph===3?0.9:ph===2?1.4:2.0)){this.sT=0;shouldJump=true;}
+      if(shouldJump){
+        this.vy=JF*(ph===3?0.95:ph===2?0.88:0.80);
+        this.jCool=0.3;this.og=false;
+        spP(this.x+this.w/2,this.y+this.h,'#FF6600',4,2);
+      }
+    }
+
+    // Fire projectile
+    var iv=ph>=3?1.2:ph>=2?1.8:2.8;
+    if(this.aT>=iv){
+      this.aT=0;this.fp('tg',pl);
+      if(ph>=3)this.fp('tg',pl,0.25);
+    }
+  }
+
+  else if(this.t==='vk'){
+    // VELCRO VIKTOR — tactical: dash, grab, shoot sticky patches
+    // Track player
+    this.vx+=(facing*spd-this.vx)*0.07;
+
+    // Jump AI: slightly more hesitant but powerful
+    if(this.og&&this.jCool<=0){
+      var doJump=false;
+      if(pl.y<this.y-25)doJump=true;
+      if(this.sT>=(ph===2?1.0:1.8)){this.sT=0;doJump=true;}
+      if(doJump){
+        this.vy=JF*(ph===2?1.0:0.88);
+        this.jCool=0.35;this.og=false;
+        spP(this.x+this.w/2,this.y+this.h,'#8844FF',4,2);
+      }
+    }
+
+    // Dash charge: periodically sprint at player
+    if(this.dashCool>0)this.dashCool-=dt;
+    if(this.og&&this.dashCool<=0&&absDx<220&&absDx>60){
+      this.dashCool=ph===2?1.8:2.8;
+      this.vx=facing*(ph===2?5.5:4.2);
+      spP(this.x+this.w/2,this.y+this.h/2,'#4444CC',5,2.5);
+    }
+
+    // Grab on contact at speed
+    if(!this.grab&&rov(this,pl)&&Math.abs(this.vx)>3){
+      this.grab=true;this.gT=1.8;pl.st=2;
+    }
+    if(this.grab){
+      this.gT-=dt;
+      pl.x=this.x+(this.vx>0?-26:this.w+4);
+      pl.vx=0;pl.vy=0;
+      if(this.gT<=0||keys._jp||touch.jp){this.grab=false;SFX.jump();}
+    }
+
+    // Fire sticky patch
+    var iv2=ph===2?1.8:2.6;
+    if(this.aT>=iv2){
+      this.aT=0;this.fp('st',null);
+      if(ph===2)this.fp('st',null,0.35);
+    }
+  }
+
+  else if(this.t==='ul'){
+    // THE UN-LACED KING — slow but devastating, teleport-jump, 3 phases
+    // Glide toward player, slower but relentless
+    var kSpd=spd*(ph===3?1.0:0.85);
+    this.vx+=(facing*kSpd-this.vx)*0.05;
+
+    // Jump AI: dramatic leaps
+    if(this.og&&this.jCool<=0){
+      var ulJump=false;
+      if(pl.y<this.y-30)ulJump=true;
+      if(this.sT>=(ph===3?0.7:ph===2?1.1:1.6)){this.sT=0;ulJump=true;}
+      if(ulJump){
+        this.vy=JF*(ph===3?1.05:ph===2?0.95:0.82);
+        this.jCool=0.4;this.og=false;
+        // Crown jewel flash
+        sfAmt=Math.max(sfAmt,ph===3?0.35:0.2);
+        spP(this.x+this.w/2,this.y,'#FF2200',6,3);
+      }
+    }
+
+    // Phase 3: teleport behind player
+    if(ph===3&&this.aT2Tele===undefined)this.aT2Tele=0;
+    if(ph===3){
+      this.aT2Tele+=dt;
+      if(this.aT2Tele>=3.5){
+        this.aT2Tele=0;
+        // Teleport to opposite side of player
+        var newX=(pl.x>this.bossX+this.arenaW/2)?
+          this.bossX+20:
+          this.bossX+this.arenaW-this.w-20;
+        spP(this.x+this.w/2,this.y+this.h/2,'#FF2200',12,4);
+        this.x=newX;this.vy=JF*0.6;
+        spP(this.x+this.w/2,this.y+this.h/2,'#FF8800',12,4);
+      }
+    }
+
+    // Attack
+    var si=ph===3?1.2:ph===2?1.8:2.5;
+    if(this.aT>=si){
+      this.aT=0;this.fp('sw',null);
+      if(ph>=2)this.fp('to',pl);
+      this.shT=0.3;
+      spP(this.x+this.w/2,this.y+this.h,td(240,2),5,2);
+    }
+    if(this.shT>0)this.shT-=dt;
+  }
+
+  // ── PROJECTILES ──
+  this.pjs=this.pjs.filter(function(p){return p.alive;});
+  this.pjs.forEach(function(p){p.upd(dt,pl);});
+
+  // ── HIT DETECTION ──
   var ab=pl.ab();
   if(ab&&rov(ab,this)&&!this._h){
     this._h=true;this.hF=0.3;
     this.hp--;SFX.bHit();
     spP(this.x+this.w/2,this.y+this.h/2,td(0,2),8,2.5);
-    this.landShake=0.2;
+    this.landShake=0.22;
     if(this.hp<=0)this.die();
-    // Mid-fight dialog at 50% HP
     if(!this._midDlg&&this.hp<=Math.floor(this.mhp*0.5)){
       this._midDlg=true;showDlg(this.t,'mid');
     }
