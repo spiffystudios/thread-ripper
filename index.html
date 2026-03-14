@@ -182,17 +182,18 @@ var SFX={
   lup:function(){[400,600,800,1000].forEach(function(f,i){tone(f,.1,'square',.1,i*.09);});}
 };
 // ============================================================
-// MUSIC — iOS Safari compatible
-// Strategy: unlockAudio() is called on every touch synchronously.
-// It calls AC.resume() directly (no .then — iOS blocks async audio).
-// startM sets mPending=true; gLoop polls each frame and kicks off
-// music the moment AC.state becomes "running".
+// MUSIC
+// One oscillator per note, chained with setTimeout.
+// unlockAudio() called on every touch to satisfy iOS policy.
 // ============================================================
-var mPlay=false,mIdx=0,mOn=true,mLv=0,mPending=false;
+var mPlay=false,mOn=true,mLv=0,mGen=0,mIdx=0;
 var MN=[
-  [262,294,330,262,294,330,392,330],
-  [294,330,370,294,330,370,440,370],
-  [330,370,415,330,370,415,494,415]
+  // Level 0: Sneaker Factory — stompy minor groove
+  [220,196,220,247,220,196,175,196],
+  // Level 1: Skate Park — driving major energy
+  [294,330,392,440,392,330,294,262],
+  // Level 2: Hall of Fame — tense chromatic climb
+  [330,349,370,392,415,440,415,392]
 ];
 
 function getAC(){
@@ -200,48 +201,43 @@ function getAC(){
   return AC;
 }
 
-// Called synchronously on every touch — iOS requires this
 function unlockAudio(){
-  var a=getAC();
-  if(a.state!=='running')a.resume(); // synchronous call, no .then needed
+  try{ getAC().resume(); }catch(e){}
 }
 
-// Play one note and schedule the next
-function _playNote(){
-  if(!mPlay||!mOn)return;
+function _tick(gen,lv){
+  if(!mPlay||!mOn||gen!==mGen)return;  // stale chain — die
   try{
     var a=getAC();
-    if(a.state!=='running'){mPending=true;return;} // not ready, gLoop will retry
-    var n=MN[Math.min(mLv,2)];
-    var o=a.createOscillator(),g=a.createGain();
-    o.connect(g);g.connect(a.destination);
-    o.type='square';
-    o.frequency.value=n[mIdx%n.length];
-    g.gain.setValueAtTime(0.05,a.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
-    o.start(a.currentTime);
-    o.stop(a.currentTime+0.20);
-    mIdx++;
-    mPending=false;
-    setTimeout(_playNote,220);
-  }catch(e){mPending=true;}
+    var n=MN[Math.min(lv,2)];
+    var freq=n[mIdx%n.length];
+    mIdx=(mIdx+1)%n.length;
+    if(freq>0&&a.state==='running'){
+      var o=a.createOscillator(),g=a.createGain();
+      o.type='square';
+      o.frequency.value=freq;
+      g.gain.setValueAtTime(0.06,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
+      o.connect(g);g.connect(a.destination);
+      o.start(a.currentTime);
+      o.stop(a.currentTime+0.20);
+    }
+  }catch(e){}
+  setTimeout(function(){_tick(gen,lv);},210);
 }
 
 function startM(lv){
-  stopM();
+  mPlay=false;          // stop old chain
+  mGen++;               // invalidate any running chain
   if(!mOn)return;
-  mPlay=true;mIdx=0;mLv=lv;mPending=true; // always set pending; gLoop starts it
+  mPlay=true;mLv=lv;mIdx=0;
+  var gen=mGen;
+  // Tiny delay so iOS has time to process the touch that triggered this
+  setTimeout(function(){_tick(gen,lv);},80);
 }
-function stopM(){mPlay=false;mPending=false;}
 
-// Called every frame from gLoop — starts music when AC is ready
-function tickMusic(){
-  if(mPending&&mPlay&&mOn){
-    var a=getAC();
-    if(a.state==='running'){_playNote();}
-    else{a.resume();} // keep trying to resume
-  }
-}
+function stopM(){mPlay=false;mGen++;}
+
 
 // Input
 var keys={};
@@ -499,50 +495,156 @@ document.getElementById('tut-skip').addEventListener('touchend',function(e){e.pr
 // ============================================================
 var BOSS_DIALOG={
   kn:{
-    approach:["HEY LACE-FACE!","YOUR LITTLE FEET","WON'T SAVE YOU HERE!"],
-    mid:     ["OUCHIE... OKAY","NOW I'M ACTUALLY","KINDA MAD!!"],
-    die:     ["NOOO... MY","BEAUTIFUL KNOTS...","UNTANGLED!!!"]
+    approach:[
+      "SO. A LOOSE LACE",
+      "WANDERS INTO MY",
+      "FACTORY. BOLD.",
+      "I KNOTTED UP YOUR",
+      "WHOLE CITY AND YOU",
+      "THINK YOU CAN STOP",
+      "THE KNOTTER?! HA.",
+      "GET TANGLED, KID."
+    ],
+    mid:[
+      "OW—OKAY. FINE.",
+      "YOU HIT HARDER THAN",
+      "A SIZE-13 STOMP.",
+      "BUT THIS FACTORY",
+      "IS MINE. EVERY KNOT",
+      "EVERY TANGLE EVERY",
+      "TWISTED LACE—MINE.",
+      "I WON'T LET GO!!"
+    ],
+    die:[
+      "NO... MY KNOTS...",
+      "UNRAVELING... HOW",
+      "DID YOU DO THAT?!",
+      "VELCRO VIKTOR WILL",
+      "FINISH WHAT I",
+      "STARTED... LACE...",
+      "YOUR CITY IS STILL",
+      "OURS... FOREVER..."
+    ]
   },
   vk:{
-    approach:["AH, THE WORM","WHO THINKS IT CAN","SKATE. HOW CUTE."],
-    mid:     ["IMPOSSIBLE!","NOTHING STICKS TO","MY VELCRO?! HOW?!"],
-    die:     ["MY GRIP... GONE!","VIKTOR DOES NOT","ACCEPT THIS!!"]
+    approach:[
+      "WELL WELL WELL.",
+      "THE LITTLE LACE",
+      "WHO LOST ITS BOARD.",
+      "I TOOK IT, YES.",
+      "YOUR PRECIOUS BOARD",
+      "IS GONE. REPLACED",
+      "BY VELCRO. SUPERIOR",
+      "IN EVERY WAY. KNEEL."
+    ],
+    mid:[
+      "IMPOSSIBLE!! I AM",
+      "HALF VELCRO HALF",
+      "CHROME — I CANNOT",
+      "BE BEATEN BY A",
+      "SHOELACE!!! MY GRIP",
+      "HOLDS EVERYTHING—",
+      "WALLS, BOARDS...",
+      "YOUR FUTURE!! MINE!"
+    ],
+    die:[
+      "MY... GRIP...",
+      "LOOSENING... NO...",
+      "THE BOARD... I...",
+      "THE UN-LACED KING",
+      "WILL AVENGE THIS.",
+      "HE UNTIES ALL.",
+      "YOU CANNOT SKATE",
+      "WHAT IS UNTIED..."
+    ]
   },
   ul:{
-    approach:["I AM THE ONE","WHO UNTIES ALL.","KNEEL, LITTLE LACE."],
-    mid:     ["YOU DARE WOUND","THE KING?! GUARDS!","DESTROY THIS PEST!"],
-    die:     ["THE LACE... WINS?","IMPOSSIBLE... I AM","UN... LACED..."]
+    approach:[
+      "I HAVE WAITED.",
+      "SINCE THE FIRST",
+      "LACE WAS THREADED",
+      "I HAVE WAITED FOR",
+      "ONE FOOL TO REACH",
+      "MY PALACE AND LOSE",
+      "EVERYTHING. WELCOME",
+      "LITTLE LACE. KNEEL."
+    ],
+    mid:[
+      "YOU WOUND ME?!",
+      "I WHO UNTIED THE",
+      "GREAT BOARD OF AGES",
+      "I WHO UNRAVELED",
+      "SNEAKER CITY'S",
+      "LAST CHAMPION—",
+      "YOU DARE SCRATCH",
+      "THE UN-LACED KING?!"
+    ],
+    die:[
+      "...THE LACE HOLDS.",
+      "AFTER ALL THIS...",
+      "IT HOLDS. I SEE.",
+      "THE BOARD WAS",
+      "NEVER MINE TO KEEP.",
+      "SOME THINGS...",
+      "CANNOT BE UNTIED.",
+      "THREAD YOUR STORY."
+    ]
   }
 };
 var dlg={active:false,lines:[],idx:0,timer:0,who:''};
 function showDlg(boss,key){
   var bd=BOSS_DIALOG[boss];if(!bd||!bd[key])return;
-  dlg.active=true;dlg.lines=bd[key];dlg.idx=0;dlg.timer=2.8;dlg.who=boss;
+  // Group lines into pages of 2 for the dialog box
+  dlg.active=true;dlg.lines=bd[key];dlg.idx=0;dlg.timer=2.4;dlg.who=boss;
 }
 function updDlg(dt){
   if(!dlg.active)return;
   dlg.timer-=dt;
-  if(dlg.timer<=0){dlg.idx++;dlg.timer=2.2;if(dlg.idx>=dlg.lines.length)dlg.active=false;}
+  if(dlg.timer<=0){
+    dlg.idx+=2; // advance 2 lines at a time (one page)
+    dlg.timer=2.0;
+    if(dlg.idx>=dlg.lines.length)dlg.active=false;
+  }
 }
 function drwDlg(){
   if(!dlg.active||dlg.idx>=dlg.lines.length)return;
-  var line=dlg.lines[dlg.idx];
-  var bx=10,by=38,bw=GW-20,bh=52;
-  ctx.fillStyle='rgba(0,0,0,0.9)';ctx.fillRect(bx,by,bw,bh);
-  ctx.strokeStyle=dlg.who==='kn'?'#FF8800':dlg.who==='vk'?'#8844FF':'#FF2200';
-  ctx.lineWidth=2;ctx.strokeRect(bx,by,bw,bh);
-  ctx.fillStyle=ctx.strokeStyle;
-  ctx.beginPath();ctx.arc(bx+18,by+18,11,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#fff';ctx.font='7px "Press Start 2P"';ctx.textAlign='center';
-  ctx.fillText(dlg.who==='kn'?'K':dlg.who==='vk'?'V':'U',bx+18,by+22);
-  var nm=dlg.who==='kn'?'KNOTTER':dlg.who==='vk'?'VIKTOR':'UN-LACED KING';
-  ctx.fillStyle=ctx.strokeStyle;ctx.font='4px "Press Start 2P"';ctx.textAlign='left';
-  ctx.fillText(nm,bx+34,by+12);
+  var col=dlg.who==='kn'?'#FF8800':dlg.who==='vk'?'#8844FF':'#FF2200';
+  var bx=8,by=36,bw=GW-16,bh=64;
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(bx+3,by+3,bw,bh);
+  // Box
+  ctx.fillStyle='rgba(6,4,14,0.97)';ctx.fillRect(bx,by,bw,bh);
+  // Border — double line
+  ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(bx,by,bw,bh);
+  ctx.strokeStyle=col+'44';ctx.lineWidth=1;ctx.strokeRect(bx+3,by+3,bw-6,bh-6);
+  // Portrait circle
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(bx+22,by+22,14,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.arc(bx+22,by+22,14,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 9px "Press Start 2P"';ctx.textAlign='center';
+  ctx.fillText(dlg.who==='kn'?'K':dlg.who==='vk'?'V':'U',bx+22,by+26);
+  // Name tag
+  var nm=dlg.who==='kn'?'THE KNOTTER':dlg.who==='vk'?'VELCRO VIKTOR':'UN-LACED KING';
+  ctx.fillStyle=col;ctx.font='4px "Press Start 2P"';ctx.textAlign='left';
+  ctx.fillText(nm,bx+42,by+14);
+  // Divider under name
+  ctx.fillStyle=col+'66';ctx.fillRect(bx+42,by+17,bw-50,1);
+  // Dialog lines — 2 per page
   ctx.fillStyle='#fff';ctx.font='5px "Press Start 2P"';
-  ctx.fillText(line,bx+34,by+30);
-  for(var di=0;di<dlg.lines.length;di++){
-    ctx.fillStyle=di===dlg.idx?'#fff':'#555';
-    ctx.beginPath();ctx.arc(bx+bw-20+di*8,by+bh-8,2,0,Math.PI*2);ctx.fill();
+  var l1=dlg.lines[dlg.idx]||'';
+  var l2=dlg.lines[dlg.idx+1]||'';
+  ctx.fillText(l1,bx+42,by+30);
+  if(l2)ctx.fillText(l2,bx+42,by+44);
+  // Page dots
+  var pages=Math.ceil(dlg.lines.length/2);
+  var curPage=Math.floor(dlg.idx/2);
+  for(var di=0;di<pages;di++){
+    ctx.fillStyle=di===curPage?col:'#333';
+    ctx.beginPath();ctx.arc(bx+bw-10-di*8,by+bh-8,2.5,0,Math.PI*2);ctx.fill();
+  }
+  // Advance hint — blinking arrow
+  if(Math.floor(Date.now()/400)%2===0){
+    ctx.fillStyle=col;ctx.font='5px "Press Start 2P"';ctx.textAlign='right';
+    ctx.fillText('▶',bx+bw-6,by+bh-4);
   }
   ctx.textAlign='left';
 }
@@ -2155,7 +2257,6 @@ function newGame(){
 
 function gLoop(ts){
   var dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
-  tickMusic(); // poll each frame — starts music when iOS AC becomes ready
   requestAnimationFrame(gLoop);
   ctx.fillStyle='#000';ctx.fillRect(0,0,GW,GH);
 
