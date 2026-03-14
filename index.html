@@ -916,12 +916,12 @@ function mkLv(i){
     return{w:bX+aW,bX:bX,arenaW:380,
     plat:[
       // Ground with pits
-      {x:0,   y:GY,w:310,h:30,type:'g'},
-      {x:370, y:GY,w:290,h:30,type:'g'}, // pit 60px
-      {x:720, y:GY,w:280,h:30,type:'g'}, // pit 60px
-      {x:1060,y:GY,w:300,h:30,type:'g'}, // pit 60px
-      {x:1420,y:GY,w:280,h:30,type:'g'}, // pit 60px
-      {x:1760,y:GY,w:300,h:30,type:'g'}, // pit 60px
+      {x:0,   y:GY,w:330,h:30,type:'g'},
+      {x:370, y:GY,w:310,h:30,type:'g'}, // pit 40px
+      {x:720, y:GY,w:300,h:30,type:'g'}, // pit 40px
+      {x:1060,y:GY,w:320,h:30,type:'g'}, // pit 40px
+      {x:1420,y:GY,w:300,h:30,type:'g'}, // pit 40px
+      {x:1760,y:GY,w:320,h:30,type:'g'}, // pit 40px
       {x:2120,y:GY,w:280,h:30,type:'g'}, // approach
       {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
@@ -1012,13 +1012,13 @@ function mkLv(i){
     return{w:bX+aW,bX:bX,arenaW:440,
     plat:[
       // Ground with larger pits
-      {x:0,   y:GY,w:280,h:30,type:'g'},
-      {x:360, y:GY,w:260,h:30,type:'g'}, // pit 80px
-      {x:700, y:GY,w:260,h:30,type:'g'}, // pit 80px
-      {x:1040,y:GY,w:280,h:30,type:'g'}, // pit 80px
-      {x:1400,y:GY,w:260,h:30,type:'g'}, // pit 80px
-      {x:1740,y:GY,w:280,h:30,type:'g'}, // pit 80px
-      {x:2100,y:GY,w:280,h:30,type:'g'}, // pit 80px
+      {x:0,   y:GY,w:305,h:30,type:'g'},
+      {x:360, y:GY,w:285,h:30,type:'g'}, // pit 55px
+      {x:700, y:GY,w:285,h:30,type:'g'}, // pit 55px
+      {x:1040,y:GY,w:305,h:30,type:'g'}, // pit 55px
+      {x:1400,y:GY,w:285,h:30,type:'g'}, // pit 55px
+      {x:1740,y:GY,w:305,h:30,type:'g'}, // pit 55px
+      {x:2100,y:GY,w:305,h:30,type:'g'}, // pit 55px
       {x:2460,y:GY,w:240,h:30,type:'g'}, // approach
       {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
@@ -1126,14 +1126,14 @@ function mkLv(i){
   return{w:bX+aW,bX:bX,arenaW:520,
   plat:[
     // Ground — smallest segments, biggest pits
-    {x:0,   y:GY,w:250,h:30,type:'g'},
-    {x:330, y:GY,w:220,h:30,type:'g'}, // pit 80px
-    {x:630, y:GY,w:220,h:30,type:'g'}, // pit 80px
-    {x:930, y:GY,w:240,h:30,type:'g'}, // pit 80px
-    {x:1250,y:GY,w:220,h:30,type:'g'}, // pit 80px
-    {x:1550,y:GY,w:240,h:30,type:'g'}, // pit 80px
-    {x:1870,y:GY,w:220,h:30,type:'g'}, // pit 80px
-    {x:2170,y:GY,w:240,h:30,type:'g'}, // pit 80px
+    {x:0,   y:GY,w:260,h:30,type:'g'},
+    {x:330, y:GY,w:230,h:30,type:'g'}, // pit 70px
+    {x:630, y:GY,w:230,h:30,type:'g'}, // pit 70px
+    {x:930, y:GY,w:250,h:30,type:'g'}, // pit 70px
+    {x:1250,y:GY,w:230,h:30,type:'g'}, // pit 70px
+    {x:1550,y:GY,w:250,h:30,type:'g'}, // pit 70px
+    {x:1870,y:GY,w:230,h:30,type:'g'}, // pit 70px
+    {x:2170,y:GY,w:250,h:30,type:'g'}, // pit 70px
     {x:2490,y:GY,w:240,h:30,type:'g'}, // approach
     {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
@@ -1265,7 +1265,7 @@ function drwPlat(plats){
 function rov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 
 // Player
-function Player(){this.x=40;this.y=GH-80;this.w=26;this.h=28;this.vx=0;this.vy=0;this.og=false;this.jl=1;this.hp=5;this.lives=3;this.ac=0;this.atk=false;this.at=0;this.ht=0;this.wt=0;this.st=0;this.fr=true;this.af=0;this.aT=0;this.hB=true;this.gB=false;this.tT=0;this.tCool=0;this.gT=0;this.onR=false;this.dj=true;this.shieldT=0;this.bigAtk=0;}
+function Player(){this.x=40;this.y=GH-80;this.w=26;this.h=28;this.vx=0;this.vy=0;this.og=false;this.jl=1;this.hp=5;this.lives=3;this.ac=0;this.atk=false;this.at=0;this.ht=0;this.wt=0;this.st=0;this.fr=true;this.af=0;this.aT=0;this.hB=true;this.gB=false;this.tT=0;this.tCool=0;this.gT=0;this.onR=false;this.dj=false;this.shieldT=0;this.bigAtk=0;}
 Player.prototype.upd=function(dt,plats){
   if(this.ht>0)this.ht-=dt;if(this.ac>0)this.ac-=dt;if(this.shieldT>0)this.shieldT-=dt;if(this.bigAtk>0)this.bigAtk-=dt;
   if(this.at>0){this.at-=dt;this.atk=true;}else this.atk=false;
@@ -1301,7 +1301,7 @@ Player.prototype.doTrick=function(){var t=TRK[Math.floor(Math.random()*TRK.lengt
 Player.prototype.dmg=function(a){if(this.ht>0||this.shieldT>0)return;this.hp-=a;this.ht=.9;SFX.hit();if(this.hp<=0){this.lives--;if(this.lives>0){this.hp=5;this.x=40;this.y=GH-80;this.vy=0;}}};
 Player.prototype.ab=function(){if(!this.atk)return null;var aw=this.bigAtk>0?72:52;return{x:this.fr?this.x+this.w:this.x-aw,y:this.y,w:aw,h:this.h+4};};
 Player.prototype.drw=function(){
-  var x=this.x,y=this.y,f=this.af;
+  var x=this.x,y=this.y,f=this.af,self=this;
   var fl=this.ht>0&&Math.floor(this.ht*10)%2===0;
   if(fl)ctx.globalAlpha=.35;
   var bY=y+this.h-6,ts=this.tT>0?(1-this.tT/.5)*Math.PI*2:0;
@@ -1324,7 +1324,6 @@ Player.prototype.drw=function(){
   ctx.fillStyle='#FFF';ctx.fillRect(x+5,y+2,5,4);ctx.fillRect(x+12,y+2,5,4);
   ctx.fillStyle='#000';ctx.fillRect(x+6+(this.fr?1:-1),y+3,2,2);ctx.fillRect(x+13+(this.fr?1:-1),y+3,2,2);
   if(this.gB)for(var i=0;i<3;i++){var sx=x+5+i*8,sy2=y-4+Math.sin(Date.now()*.008+i)*3;ctx.fillStyle=td(i*120,3,100,75);ctx.fillRect(sx,sy2,2,2);}
-  var self=this;
   if(this.atk){
     var aw2=this.bigAtk>0?72:52;
     var ax=this.fr?x+this.w:x;
@@ -1335,18 +1334,24 @@ Player.prototype.drw=function(){
     var tipX=this.fr?ax+reach:ax-reach;
     // Base tip height — mid-body
     var tipY=y+this.h*0.4;
-    // Angle toward nearest enemy — subtle, 18% lean max
+    // Angle toward nearest target — enemies + boss, 22% lean
+    var nearest=null,nd=9999;
     if(typeof enemies!=='undefined'){
-      var nearest=null,nd=9999;
       enemies.forEach(function(e){
         if(!e.alive)return;
-        var ex=e.x+e.w/2,ey=e.y+e.h/2;
-        var facing=self.fr?(ex>x):(ex<x);
+        var ex=e.x+e.w/2;
+        var fwd=self.fr?(ex>x):(ex<x);
         var d=Math.abs(ex-x);
-        if(facing&&d<100&&d<nd){nd=d;nearest=e;}
+        if(fwd&&d<110&&d<nd){nd=d;nearest={x:e.x,y:e.y,w:e.w,h:e.h};}
       });
-      if(nearest){tipY+=((nearest.y+nearest.h/2)-tipY)*0.18;}
     }
+    if(typeof boss!=='undefined'&&boss&&boss.alive){
+      var bex=boss.x+boss.w/2;
+      var bfwd=self.fr?(bex>x):(bex<x);
+      var bd2=Math.abs(bex-x);
+      if(bfwd&&bd2<160&&bd2<nd){nd=bd2;nearest={x:boss.x,y:boss.y,w:boss.w,h:boss.h};}
+    }
+    if(nearest){tipY+=((nearest.y+nearest.h/2)-tipY)*0.22;}
     // Whip arc — control point above midway, giving a satisfying crack shape
     var cpX=ax+(this.fr?reach*0.55:-reach*0.55);
     var cpY=tipY-8-phase*6;
@@ -1937,48 +1942,98 @@ Boss.prototype.upd=function(dt,pl){
   }
 
   else if(this.t==='ul'){
-    // THE UN-LACED KING — slow but devastating, teleport-jump, 3 phases
-    // Glide toward player, slower but relentless
-    var kSpd=spd*(ph===3?1.0:0.85);
-    this.vx+=(facing*kSpd-this.vx)*0.05;
+    // ── THE UN-LACED KING — 3 escalating phases ──
+    if(!this.aT2Tele)this.aT2Tele=0;
+    if(!this.rageT)this.rageT=0;
+    if(!this.roarT)this.roarT=0;
 
-    // Jump AI: dramatic leaps
+    // Phase transition effects
+    if(ph===2&&!this._ph2done){
+      this._ph2done=true;
+      sfAmt=0.7;
+      for(var pi=0;pi<20;pi++)spP(this.x+this.w/2,this.y+this.h/2,td(pi*18,3),8,4);
+      spTx(this.x+this.w/2,this.y-20,'PHASE II');
+      SFX.bHit();
+    }
+    if(ph===3&&!this._ph3done){
+      this._ph3done=true;
+      sfAmt=1.0;
+      for(var pi=0;pi<30;pi++)spP(this.x+this.w/2,this.y+this.h/2,td(pi*12,4),10,5);
+      spTx(this.x+this.w/2,this.y-20,'UNRAVELING!');
+      SFX.bDie();SFX.bHit();
+      // Screen shake
+      this.landShake=1.5;
+    }
+
+    // Speed: ph1=slow regal, ph2=aggressive, ph3=frantic
+    var kSpd=spd*(ph===3?1.15:ph===2?0.95:0.75);
+    this.vx+=(facing*kSpd-this.vx)*( ph===3?0.08:0.05 );
+
+    // Jump AI
     if(this.og&&this.jCool<=0){
       var ulJump=false;
-      if(pl.y<this.y-30)ulJump=true;
-      if(this.sT>=(ph===3?0.7:ph===2?1.1:1.6)){this.sT=0;ulJump=true;}
+      if(pl.y<this.y-28)ulJump=true;
+      var jumpInterval=ph===3?0.65:ph===2?1.0:1.6;
+      if(this.sT>=jumpInterval){this.sT=0;ulJump=true;}
       if(ulJump){
-        this.vy=JF*(ph===3?1.05:ph===2?0.95:0.82);
-        this.jCool=0.4;this.og=false;
-        // Crown jewel flash
-        sfAmt=Math.max(sfAmt,ph===3?0.35:0.2);
-        spP(this.x+this.w/2,this.y,'#FF2200',6,3);
+        var jStr=ph===3?1.08:ph===2?0.96:0.82;
+        this.vy=JF*jStr;
+        this.jCool=ph===3?0.25:0.4;
+        this.og=false;
+        sfAmt=Math.max(sfAmt,ph===3?0.4:0.18);
+        spP(this.x+this.w/2,this.y,'#FF2200',ph===3?10:5,ph===3?4:2.5);
       }
     }
 
-    // Phase 3: teleport behind player
-    if(ph===3&&this.aT2Tele===undefined)this.aT2Tele=0;
-    if(ph===3){
+    // Phase 2+: Teleport to opposite side
+    if(ph>=2){
       this.aT2Tele+=dt;
-      if(this.aT2Tele>=3.5){
+      var teleInterval=ph===3?2.0:4.0;
+      if(this.aT2Tele>=teleInterval){
         this.aT2Tele=0;
-        // Teleport to opposite side of player
-        var newX=(pl.x>this.bossX+this.arenaW/2)?
-          this.bossX+20:
-          this.bossX+this.arenaW-this.w-20;
-        spP(this.x+this.w/2,this.y+this.h/2,'#FF2200',12,4);
-        this.x=newX;this.vy=JF*0.6;
-        spP(this.x+this.w/2,this.y+this.h/2,'#FF8800',12,4);
+        var newX=(pl.x-this.bossX > this.arenaW/2)?
+          this.bossX+25:
+          this.bossX+this.arenaW-this.w-25;
+        // Vanish flash
+        spP(this.x+this.w/2,this.y+this.h/2,ph===3?'#FF2200':'#CC00FF',14,5);
+        this.x=newX;
+        // Appear flash + leap
+        this.vy=JF*(ph===3?0.75:0.55);
+        spP(this.x+this.w/2,this.y+this.h/2,ph===3?'#FF8800':'#AA44FF',14,5);
+        this.landShake=ph===3?0.6:0.3;
       }
     }
 
-    // Attack
-    var si=ph===3?1.2:ph===2?1.8:2.5;
+    // Phase 3: RAGE MODE — screen-edge aura
+    if(ph===3){
+      this.rageT+=dt;
+      // Periodic rage burst: fires 4 projectiles in spread
+      if(this.rageT>=1.8){
+        this.rageT=0;
+        this.fp('tg',pl,0);
+        this.fp('tg',pl,0.1);
+        this.fp('tg',pl,0.2);
+        this.fp('sw',null,0);
+        spP(this.x+this.w/2,this.y+this.h/2,'#FF0000',12,4);
+        this.landShake=Math.max(this.landShake,0.4);
+      }
+      // Roar taunt
+      this.roarT+=dt;
+      if(this.roarT>=5){
+        this.roarT=0;
+        spTx(this.x+this.w/2,this.y-18,['FEEL MY WRATH!','YOU CANNOT WIN!','I AM ETERNAL!'][Math.floor(Math.random()*3)]);
+      }
+    }
+
+    // Main attack cadence
+    var si=ph===3?1.0:ph===2?1.6:2.5;
     if(this.aT>=si){
-      this.aT=0;this.fp('sw',null);
-      if(ph>=2)this.fp('to',pl);
+      this.aT=0;
+      this.fp('sw',null);
+      if(ph>=2){this.fp('to',pl);this.fp('to',pl,0.3);}
+      if(ph===3)this.fp('tg',pl,0.15);
       this.shT=0.3;
-      spP(this.x+this.w/2,this.y+this.h,td(240,2),5,2);
+      spP(this.x+this.w/2,this.y+this.h,td(240+ph*30,2),5+ph,2);
     }
     if(this.shT>0)this.shT-=dt;
   }
@@ -2364,13 +2419,69 @@ function drwGO(){
   if(Math.floor(Date.now()/500)%2===0){ctx.fillStyle=td(180,2);ctx.fillText('TAP TO RETRY',GW/2,GH/2+34);}ctx.textAlign='left';
 }
 function drwWin(wt){
-  ctx.fillStyle='#000';ctx.fillRect(0,0,GW,GH);spCnf(2);drwP();
-  var sh=Math.sin(wt*3)*.4+.6;ctx.globalAlpha=sh;
-  ctx.fillStyle=tdg(GW/2-70,GH/2-40,GW/2+70,GH/2-40,0,1.5);ctx.font='9px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('LACE IS',GW/2,GH/2-38);
-  ctx.fillStyle=tdg(GW/2-65,GH/2-20,GW/2+65,GH/2-20,180,1.5);ctx.fillText('LEGENDARY!',GW/2,GH/2-18);
-  ctx.globalAlpha=1;ctx.fillStyle='#FFF';ctx.font='6px "Press Start 2P"';ctx.fillText('SCORE: '+gScore,GW/2,GH/2+6);
-  ctx.fillStyle='#aaa';ctx.font='4px "Press Start 2P"';ctx.fillText('(c) Spiffy Brand',GW/2,GH/2+24);
-  if(Math.floor(wt*2)%2===0){ctx.fillStyle=td(0,2);ctx.font='6px "Press Start 2P"';ctx.fillText('TAP TO PLAY AGAIN',GW/2,GH/2+46);}ctx.textAlign='left';
+  // Confetti rain
+  spCnf(3);drwP();
+  // Dark sky background with star shimmer
+  ctx.fillStyle='#000008';ctx.fillRect(0,0,GW,GH);
+  // Star field
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  for(var si=0;si<40;si++){
+    var sx=((si*73+Math.floor(wt*8))%GW+GW)%GW;
+    var sy=((si*41)%GH+GH)%GH;
+    if(Math.floor(wt*3+si)%3===0)ctx.fillRect(sx,sy,1,1);
+  }
+
+  // Glowing title panel
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.fillRect(GW/2-118,20,236,GH-36);
+  ctx.strokeStyle=td(0,1.5);ctx.lineWidth=2;ctx.strokeRect(GW/2-118,20,236,GH-36);
+  ctx.strokeStyle=td(120,1.5);ctx.lineWidth=1;ctx.strokeRect(GW/2-115,23,230,GH-42);
+
+  ctx.textAlign='center';
+
+  // "LACE IS LEGENDARY" title
+  var pulse=Math.sin(wt*2.5)*0.2+0.8;
+  ctx.globalAlpha=pulse;
+  ctx.fillStyle=tdg(GW/2-65,42,GW/2+65,42,0,2);
+  ctx.font='9px "Press Start 2P"';ctx.fillText('LACE IS',GW/2,50);
+  ctx.fillStyle=tdg(GW/2-75,64,GW/2+75,64,120,2);
+  ctx.fillText('LEGENDARY',GW/2,72);
+  ctx.globalAlpha=1;
+
+  // Story closer text
+  ctx.fillStyle='#aaa';ctx.font='4px "Press Start 2P"';
+  ctx.fillText('The Un-Laced King is defeated.',GW/2,92);
+  ctx.fillText('The board is reclaimed.',GW/2,104);
+  ctx.fillStyle=td(60,1,80,70);
+  ctx.fillText('Sneaker City is free.',GW/2,120);
+
+  // Glow board earned badge
+  ctx.fillStyle=td(0,3);ctx.font='5px "Press Start 2P"';
+  ctx.fillText('★ GLOW BOARD OBTAINED ★',GW/2,140);
+
+  // Score panel
+  ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fillRect(GW/2-90,152,180,64);
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.strokeRect(GW/2-90,152,180,64);
+  ctx.fillStyle='#fff';ctx.font='5px "Press Start 2P"';ctx.fillText('FINAL SCORE',GW/2,166);
+  ctx.fillStyle=tdg(GW/2-50,178,GW/2+50,178,0,2);ctx.font='10px "Press Start 2P"';
+  ctx.fillText(gScore,GW/2,182);
+  ctx.fillStyle='#555';ctx.font='4px "Press Start 2P"';
+  var isHi=gScore>=hiSc;
+  if(isHi){ctx.fillStyle=td(60,2);ctx.fillText('★ NEW HIGH SCORE ★',GW/2,196);}
+  else{ctx.fillText('BEST: '+hiSc,GW/2,196);}
+  ctx.fillText('WORLDS CLEARED: 3',GW/2,208);
+
+  // Brand footer
+  ctx.fillStyle=td(240,.5,60,60);ctx.font='4px "Press Start 2P"';
+  ctx.fillText('Thread Your Story.',GW/2,224);
+  ctx.fillStyle='#333';ctx.fillText('spiffybrand.com  |  (c) Spiffy Studios',GW/2,236);
+
+  // Blink CTA
+  if(Math.floor(wt*1.8)%2===0){
+    ctx.fillStyle=td(0,2);ctx.font='6px "Press Start 2P"';
+    ctx.fillText('TAP TO PLAY AGAIN',GW/2,258);
+  }
+  ctx.textAlign='left';
 }
 function drwPause(){
   ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,GW,GH);
@@ -2433,6 +2544,7 @@ function initLv(i){
   pickups=(lData.pk||[]).map(function(p){return new Pickup(p.t,p.x,p.y);});
   wizard=null;bSpawn=true;bDone=false;wSpawn=false;wDlg=false;noBrd=false;puTimer=10;
   cam=new Camera();player.x=40;player.y=GH-80;player.vx=0;player.vy=0;
+  if(i>=1)player.dj=true;  // double jump unlocked from level 1+
   if(i===2&&!player.gB)player.hB=false;
   // Spawn boss at end of world immediately — he's waiting there
   var bossTypes=['kn','vk','ul'];
