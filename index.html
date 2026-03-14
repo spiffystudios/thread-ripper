@@ -202,28 +202,44 @@ function getAC(){
 }
 
 function unlockAudio(){
-  try{ getAC().resume(); }catch(e){}
+  try{
+    var a=getAC();
+    a.resume();
+    // If music should be playing but chain died, restart it
+    if(mOn&&mPlay&&mGen>0){
+      // chain is still alive (setTimeout keeps it going) — just resume does it
+    } else if(mOn&&!mPlay&&typeof cLv!=='undefined'&&(gState===1||gState===3)){
+      // Music should be playing but isn't — restart it
+      startM(cLv);
+    }
+  }catch(e){}
 }
 
 function _tick(gen,lv){
-  if(!mPlay||!mOn||gen!==mGen)return;  // stale chain — die
+  if(!mPlay||!mOn||gen!==mGen)return;
+  var delay=210;
   try{
     var a=getAC();
-    var n=MN[Math.min(lv,2)];
-    var freq=n[mIdx%n.length];
-    mIdx=(mIdx+1)%n.length;
-    if(freq>0&&a.state==='running'){
-      var o=a.createOscillator(),g=a.createGain();
-      o.type='square';
-      o.frequency.value=freq;
-      g.gain.setValueAtTime(0.06,a.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
-      o.connect(g);g.connect(a.destination);
-      o.start(a.currentTime);
-      o.stop(a.currentTime+0.20);
+    if(a.state==='suspended'){
+      a.resume();        // try to resume — next tick will play if it worked
+      delay=150;         // retry sooner
+    } else if(a.state==='running'){
+      var n=MN[Math.min(lv,2)];
+      var freq=n[mIdx%n.length];
+      mIdx=(mIdx+1)%n.length;
+      if(freq>0){
+        var o=a.createOscillator(),g=a.createGain();
+        o.type='square';
+        o.frequency.value=freq;
+        g.gain.setValueAtTime(0.07,a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.20);
+        o.connect(g);g.connect(a.destination);
+        o.start(a.currentTime);
+        o.stop(a.currentTime+0.22);
+      }
     }
   }catch(e){}
-  setTimeout(function(){_tick(gen,lv);},210);
+  setTimeout(function(){_tick(gen,lv);},delay);
 }
 
 function startM(lv){
@@ -252,6 +268,13 @@ window.addEventListener('keydown',function(e){
 });
 window.addEventListener('keyup',function(e){keys[e.code]=false;if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')keys._jh=false;});
 function clrK(){keys._jp=false;keys._ap=false;keys._tp=false;keys._pp=false;keys._ep=false;touch.jp=false;touch.tp=false;}
+// Safety: if no touches active, clear held buttons (prevents stuck movement)
+window.addEventListener('touchend',function(e){
+  if(e.touches.length===0){touch.L=false;touch.R=false;}
+},{passive:true});
+window.addEventListener('touchcancel',function(e){
+  touch.L=false;touch.R=false;touch.jp=false;
+},{passive:true});
 
 // REAL HTML BUTTONS
 var isMob=('ontouchstart' in window)||navigator.maxTouchPoints>0;
@@ -259,7 +282,9 @@ function wireBtn(id,onDn,onUp){
   var el=document.getElementById(id);if(!el)return;
   function dn(e){e.preventDefault();e.stopPropagation();el.classList.add('on');onDn();unlockAudio();}
   function up(e){e.preventDefault();e.stopPropagation();el.classList.remove('on');if(onUp)onUp();}
-  el.addEventListener('touchstart',dn,{passive:false});el.addEventListener('touchend',up,{passive:false});el.addEventListener('touchcancel',up,{passive:false});
+  el.addEventListener('touchstart',dn,{passive:false});
+  el.addEventListener('touchend',up,{passive:false});
+  el.addEventListener('touchcancel',up,{passive:false});
   el.addEventListener('mousedown',dn);el.addEventListener('mouseup',up);el.addEventListener('mouseleave',up);
 }
 wireBtn('bL',function(){touch.L=true;},function(){touch.L=false;});
@@ -888,7 +913,7 @@ function mkLv(i){
     // Boss: THE KNOTTER at x=2400
     // ══════════════════════════════════════
     var bX=2400,aW=380;
-    return{w:bX+aW,bX:bX,arenaW:aW,
+    return{w:bX+aW,bX:bX,arenaW:380,
     plat:[
       // Ground with pits
       {x:0,   y:GY,w:310,h:30,type:'g'},
@@ -984,7 +1009,7 @@ function mkLv(i){
     // Boss: VELCRO VIKTOR at x=2700
     // ══════════════════════════════════════
     var bX=2700,aW=440;
-    return{w:bX+aW,bX:bX,arenaW:aW,
+    return{w:bX+aW,bX:bX,arenaW:440,
     plat:[
       // Ground with larger pits
       {x:0,   y:GY,w:280,h:30,type:'g'},
@@ -1098,7 +1123,7 @@ function mkLv(i){
   // Boss: UN-LACED KING at x=3000
   // ══════════════════════════════════════
   var bX=3000,aW=520;
-  return{w:bX+aW,bX:bX,arenaW:aW,
+  return{w:bX+aW,bX:bX,arenaW:520,
   plat:[
     // Ground — smallest segments, biggest pits
     {x:0,   y:GY,w:250,h:30,type:'g'},
@@ -1802,24 +1827,23 @@ Boss.prototype.upd=function(dt,pl){
   this.x+=this.vx;
   this.y+=this.vy;
 
-  // Arena floor and platform collision
-  var self=this;
-  var arenaFloor=this.targetY; // ground level for this boss
+  // Physics: floor is always targetY (GH-30-h) — boss never falls below ground
   var landed=false;
-  // Check arena platforms from lData
-  if(typeof lData!=='undefined'&&lData.plat){
+  // Hard floor — always catches the boss regardless of platform gaps
+  if(this.y>=this.targetY){
+    this.y=this.targetY;this.vy=0;landed=true;
+  }
+  // Also land on raised platforms in the arena
+  if(!landed&&typeof lData!=='undefined'&&lData.plat){
+    var self=this;
     lData.plat.forEach(function(p){
+      if(p.type==='g')return; // skip ground (handled above)
       if(self.x+self.w>p.x&&self.x<p.x+p.w&&
          self.y+self.h>p.y&&self.y+self.h<p.y+p.h+14&&
          self.vy>=0){
         self.y=p.y-self.h;self.vy=0;landed=true;
-        if(p.type==='cv')self.x+=p.d*0.7;
       }
     });
-  }
-  // Ground/floor fallback
-  if(this.y>=arenaFloor){
-    this.y=arenaFloor;this.vy=0;landed=true;
   }
   if(landed)this.og=true;else this.og=false;
 
@@ -2267,11 +2291,14 @@ Wizard.prototype.drw=function(){var x=this.x,y=this.y+Math.sin(this.fT*2)*3;ctx.
 function Camera(){this.x=0;}
 Camera.prototype.upd=function(pl,w){
   var t=pl.x-GW/3;this.x+=(t-this.x)*.1;
-  // Cap scroll: don't show past boss arena until boss is dead
   var maxX=w-GW;
   if(typeof boss!=='undefined'&&boss&&!bDone){
-    // Stop camera 60px before boss so player sees him waiting
-    maxX=Math.min(maxX,boss.bossX-(GW/2)); // camera stops half-screen before boss
+    if(!boss.activated){
+      // Before fight: stop camera before boss so player sees him waiting
+      maxX=Math.min(maxX,boss.bossX-GW/2);
+    }
+    // Once activated: camera follows freely within full world — no cap needed
+    // (player wall already stops player from leaving arena)
   }
   this.x=Math.max(0,Math.min(maxX,this.x));
 };
@@ -2442,8 +2469,8 @@ function gLoop(ts){
   }
   else if(gState===ST.P||gState===ST.B){
     // Boss activation: player enters arena (within 320px of boss)
-    if(boss&&!boss.activated&&player.x+cam.x>lData.bX-320){
-      boss.activated=true;boss.arenaW=lData.arenaW||340;boss.entT=0;boss.entDone=false;
+    if(boss&&!boss.activated&&player.x>lData.bX-300){
+      boss.activated=true;boss.arenaW=lData.arenaW;boss.entT=0;boss.entDone=false;
       boss.vx=1.1;boss.y=boss.targetY;
       gState=ST.B;sfAmt=0.9;
       for(var _i=0;_i<16;_i++)spP(boss.x+boss.w/2,boss.y+boss.h/2,td(_i*22,3),7,4);
@@ -2452,9 +2479,9 @@ function gLoop(ts){
     }
     if(cLv===2&&bDone&&!wSpawn){wSpawn=true;wizard=new Wizard(player.x+200);}
     player.upd(dt,lData.plat);
-    // Hard wall: player cannot walk past boss fort entrance until boss is dead
-    if(boss&&!bDone){
-      var wallR=boss.bossX+boss.arenaW;
+    // Hard wall: player cannot leave boss arena right edge
+    if(boss&&boss.activated&&!bDone){
+      var wallR=boss.bossX+(boss.arenaW||380);
       if(player.x+player.w>wallR){player.x=wallR-player.w;player.vx=0;}
     }
     cam.upd(player,lData.w);
