@@ -264,7 +264,7 @@ function updateHUD(){
 }
 
 // Tutorial
-var TUT_KEY='trTutV5';
+var TUT_KEY='trTutV6';
 var tutIdx=0,tutFromPause=false;
 // Tutorial pages — story first, then controls, then powerups
 var TUT_PAGES=[
@@ -1285,8 +1285,8 @@ Boss.prototype.upd=function(dt,pl){
   // NOT YET ACTIVATED — idle pacing, waiting for player to enter arena
   if(!this.activated){
     this.entT=(this.entT||0)+dt;
-    // Gentle idle: bob up/down slightly, face toward player direction
-    this.x=this.bossX+Math.sin(this.entT*0.7)*6;
+    this.x=this.bossX;  // stay at arena entrance
+    this.y=this.targetY+Math.sin(this.entT*1.5)*3; // gentle bob
     return;
   }
 
@@ -1466,7 +1466,7 @@ Camera.prototype.upd=function(pl,w){
   var maxX=w-GW;
   if(typeof boss!=='undefined'&&boss&&!bDone){
     // Stop camera 60px before boss so player sees him waiting
-    maxX=Math.min(maxX,boss.bossX-60);
+    maxX=Math.min(maxX,boss.bossX-(GW/2)); // camera stops half-screen before boss
   }
   this.x=Math.max(0,Math.min(maxX,this.x));
 };
@@ -1594,7 +1594,7 @@ function gLoop(ts){
   else if(gState===ST.P||gState===ST.B){
     // Boss activation: player enters arena (within 320px of boss)
     if(boss&&!boss.activated&&player.x+cam.x>lData.bX-320){
-      boss.activated=true;boss.arenaW=lData.arenaW||340;
+      boss.activated=true;boss.arenaW=lData.arenaW||340;boss.entT=0;boss.entDone=false;
       boss.vx=1.1;boss.y=boss.targetY;
       gState=ST.B;sfAmt=0.9;
       for(var _i=0;_i<16;_i++)spP(boss.x+boss.w/2,boss.y+boss.h/2,td(_i*22,3),7,4);
@@ -1602,7 +1602,13 @@ function gLoop(ts){
       showDlg(boss.t,'approach');
     }
     if(cLv===2&&bDone&&!wSpawn){wSpawn=true;wizard=new Wizard(player.x+200);}
-    player.upd(dt,lData.plat);cam.upd(player,lData.w);
+    player.upd(dt,lData.plat);
+    // Hard wall: player cannot walk past boss fort entrance until boss is dead
+    if(boss&&!bDone){
+      var wallR=boss.bossX+boss.arenaW;
+      if(player.x+player.w>wallR){player.x=wallR-player.w;player.vx=0;}
+    }
+    cam.upd(player,lData.w);
     enemies.forEach(function(e){e.upd(dt,player,lData.plat);if(e.sk){e.sk.forEach(function(k){enemies.push(k);});e.sk=null;}});
     enemies=enemies.filter(function(e){return e.alive;});
     pickups.forEach(function(p){p.upd(dt,player);});pickups=pickups.filter(function(p){return p.alive;});
