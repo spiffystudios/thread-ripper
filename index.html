@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate"><meta http-equiv="pragma" content="no-cache"><meta http-equiv="expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>THREAD RIPPER</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -776,19 +777,351 @@ function drwBg(li,cx){
 }
 
 function mkLv(i){
-  var g={x:0,y:GH-30,w:6000,h:30,type:'g'};
-  if(i===0)return{w:3200,eX:3200,bX:2400,arenaW:380,
-    plat:[g,{x:150,y:345,w:75,h:12,type:'b'},{x:290,y:322,w:65,h:12,type:'b'},{x:420,y:340,w:100,h:12,type:'cv',d:1},{x:580,y:308,w:75,h:12,type:'b'},{x:730,y:328,w:85,h:12,type:'b'},{x:880,y:292,w:75,h:12,type:'b'},{x:1020,y:315,w:95,h:12,type:'cv',d:-1},{x:1180,y:298,w:75,h:12,type:'b'},{x:1340,y:318,w:75,h:12,type:'b'},{x:1500,y:282,w:85,h:12,type:'b'},{x:1680,y:305,w:75,h:12,type:'b'}],
-    en:[{t:'gs',x:280,y:GH-40},{t:'kl',x:470,y:GH-40},{t:'gs',x:640,y:GH-40},{t:'kl',x:840,y:GH-40},{t:'gs',x:1060,y:GH-40},{t:'kl',x:1280,y:GH-40},{t:'gs',x:1530,y:GH-40},{t:'kl',x:1750,y:GH-40}],
-    pk:[{t:'h',x:200,y:GH-46},{t:'sp',x:500,y:GH-46},{t:'h',x:750,y:GH-46},{t:'sh',x:1000,y:GH-46},{t:'h',x:1200,y:GH-46},{t:'bi',x:1450,y:GH-46},{t:'h',x:1700,y:GH-46},{t:'sp',x:1900,y:GH-46}]};
-  if(i===1)return{w:3400,eX:3400,bX:2600,arenaW:440,
-    plat:[g,{x:140,y:345,w:95,h:12,type:'pp'},{x:300,y:318,w:75,h:12,type:'rl'},{x:455,y:338,w:85,h:12,type:'pp'},{x:620,y:305,w:75,h:12,type:'b'},{x:785,y:325,w:95,h:12,type:'rl'},{x:960,y:288,w:75,h:12,type:'b'},{x:1120,y:312,w:85,h:12,type:'pp'},{x:1290,y:292,w:75,h:12,type:'b'},{x:1460,y:315,w:95,h:12,type:'rl'},{x:1640,y:275,w:75,h:12,type:'b'},{x:1820,y:298,w:85,h:12,type:'pp'}],
-    en:[{t:'sg',x:300,y:GH-40},{t:'db',x:500,y:GH-40},{t:'lh',x:700,y:GH-40},{t:'sg',x:900,y:GH-40},{t:'db',x:1100,y:GH-40},{t:'lh',x:1320,y:GH-40},{t:'sg',x:1560,y:GH-40},{t:'db',x:1800,y:GH-40}],
-    pk:[{t:'h',x:200,y:GH-46},{t:'sp',x:450,y:GH-46},{t:'h',x:700,y:GH-46},{t:'sh',x:950,y:GH-46},{t:'bi',x:1200,y:GH-46},{t:'h',x:1450,y:GH-46},{t:'w',x:1700,y:GH-46},{t:'sp',x:1950,y:GH-46}]};
-  return{w:3600,eX:3600,bX:2800,arenaW:520,
-    plat:[g,{x:130,y:338,w:85,h:12,type:'fl'},{x:285,y:305,w:75,h:12,type:'fl'},{x:438,y:328,w:85,h:12,type:'fl'},{x:600,y:290,w:75,h:12,type:'fl'},{x:762,y:312,w:85,h:12,type:'fl'},{x:930,y:275,w:75,h:12,type:'fl'},{x:1095,y:298,w:85,h:12,type:'fl'},{x:1270,y:262,w:75,h:12,type:'fl'},{x:1448,y:285,w:85,h:12,type:'fl'},{x:1630,y:248,w:75,h:12,type:'fl'},{x:1820,y:272,w:85,h:12,type:'fl'}],
-    en:[{t:'lh',x:275,y:GH-40},{t:'wz',x:470,y:GH-40},{t:'db',x:666,y:GH-40},{t:'wz',x:870,y:GH-40},{t:'lh',x:1075,y:GH-40},{t:'wz',x:1320,y:GH-40},{t:'lh',x:1570,y:GH-40},{t:'wz',x:1840,y:GH-40}],
-    pk:[{t:'h',x:220,y:GH-46},{t:'sh',x:500,y:GH-46},{t:'h',x:780,y:GH-46},{t:'bi',x:1050,y:GH-46},{t:'h',x:1300,y:GH-46},{t:'sp',x:1550,y:GH-46},{t:'h',x:1800,y:GH-46}]};
+  var GY=GH-30;
+
+  if(i===0){
+    // ══════════════════════════════════════
+    // LEVEL 0: SNEAKER FACTORY
+    // Intro — factory floors, conveyors, small pits, easy jumps
+    // Boss: THE KNOTTER at x=2400
+    // ══════════════════════════════════════
+    var bX=2400,aW=380;
+    return{w:bX+aW,bX:bX,arenaW:aW,
+    plat:[
+      // Ground with pits
+      {x:0,   y:GY,w:310,h:30,type:'g'},
+      {x:370, y:GY,w:290,h:30,type:'g'}, // pit 60px
+      {x:720, y:GY,w:280,h:30,type:'g'}, // pit 60px
+      {x:1060,y:GY,w:300,h:30,type:'g'}, // pit 60px
+      {x:1420,y:GY,w:280,h:30,type:'g'}, // pit 60px
+      {x:1760,y:GY,w:300,h:30,type:'g'}, // pit 60px
+      {x:2120,y:GY,w:280,h:30,type:'g'}, // approach
+      {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
+
+      // ZONE 1 (0-720): Ground floor intro
+      {x:80,  y:355,w:80, h:12,type:'b'},
+      {x:220, y:340,w:75, h:12,type:'b'},
+      {x:320, y:325,w:65, h:12,type:'b'},  // bridge over pit
+      {x:430, y:340,w:80, h:12,type:'cv',d:1},
+      {x:565, y:355,w:80, h:12,type:'b'},
+      {x:670, y:340,w:65, h:12,type:'b'},  // bridge over pit
+      // Upper factory route
+      {x:120, y:295,w:80, h:12,type:'b'},
+      {x:260, y:278,w:75, h:12,type:'cv',d:-1},
+      {x:400, y:262,w:80, h:12,type:'b'},
+      {x:545, y:278,w:75, h:12,type:'b'},
+      {x:665, y:262,w:80, h:12,type:'b'},
+
+      // ZONE 2 (720-1060): Press room
+      {x:750, y:355,w:80, h:12,type:'b'},
+      {x:880, y:335,w:85, h:12,type:'cv',d:1},
+      {x:1010,y:318,w:65, h:12,type:'b'},
+      {x:1005,y:355,w:65, h:12,type:'b'},  // over pit
+      // Upper press catwalks
+      {x:760, y:295,w:80, h:12,type:'b'},
+      {x:900, y:272,w:85, h:12,type:'b'},
+      {x:1040,y:252,w:80, h:12,type:'b'},
+
+      // ZONE 3 (1060-1420): Assembly line
+      {x:1100,y:355,w:80, h:12,type:'b'},
+      {x:1220,y:335,w:90, h:12,type:'cv',d:-1},
+      {x:1360,y:318,w:75, h:12,type:'b'},
+      {x:1355,y:355,w:75, h:12,type:'b'},  // over pit
+      // Upper
+      {x:1110,y:290,w:80, h:12,type:'b'},
+      {x:1250,y:268,w:85, h:12,type:'b'},
+      {x:1390,y:248,w:80, h:12,type:'b'},
+
+      // ZONE 4 (1420-1760): Loading bay
+      {x:1460,y:355,w:80, h:12,type:'b'},
+      {x:1580,y:338,w:85, h:12,type:'cv',d:1},
+      {x:1710,y:318,w:65, h:12,type:'b'},
+      {x:1705,y:355,w:65, h:12,type:'b'},  // over pit
+      // Upper
+      {x:1470,y:292,w:80, h:12,type:'b'},
+      {x:1610,y:272,w:80, h:12,type:'b'},
+      {x:1750,y:252,w:80, h:12,type:'b'},
+
+      // ZONE 5 (1760-2400): Final approach
+      {x:1800,y:355,w:80, h:12,type:'b'},
+      {x:1930,y:338,w:85, h:12,type:'b'},
+      {x:2060,y:318,w:80, h:12,type:'b'},
+      {x:2150,y:355,w:80, h:12,type:'b'},
+      {x:2270,y:335,w:85, h:12,type:'b'},
+      // High route
+      {x:1810,y:285,w:80, h:12,type:'b'},
+      {x:1950,y:262,w:80, h:12,type:'b'},
+      {x:2090,y:242,w:80, h:12,type:'b'},
+      {x:2230,y:258,w:80, h:12,type:'b'},
+
+      // Boss arena platforms (knot factory catwalks)
+      {x:bX+30, y:GY-52,w:65,h:12,type:'b'},
+      {x:bX+140,y:GY-88,w:65,h:12,type:'b'},
+      {x:bX+255,y:GY-52,w:65,h:12,type:'b'},
+    ],
+    en:[
+      {t:'gs',x:200, y:GY-30},{t:'kl',x:430, y:GY-25},
+      {t:'gs',x:620, y:GY-30},{t:'kl',x:830, y:GY-25},
+      {t:'gs',x:1080,y:GY-30},{t:'kl',x:1280,y:GY-25},
+      {t:'gs',x:1500,y:GY-30},{t:'kl',x:1700,y:GY-25},
+      {t:'gs',x:1920,y:GY-30},{t:'kl',x:2180,y:GY-25},
+    ],
+    pk:[
+      {t:'h', x:100, y:GY-46},{t:'sp',x:420, y:GY-46},
+      {t:'h', x:680, y:GY-46},{t:'sh',x:950, y:GY-46},
+      {t:'h', x:1200,y:GY-46},{t:'bi',x:1480,y:GY-46},
+      {t:'h', x:1740,y:GY-46},{t:'sp',x:2000,y:GY-46},
+      {t:'h', x:2250,y:GY-46},
+    ]};
+  }
+
+  if(i===1){
+    // ══════════════════════════════════════
+    // LEVEL 1: SKATE PARK
+    // Half-pipes, rails, bigger gaps, multi-height routing
+    // Boss: VELCRO VIKTOR at x=2700
+    // ══════════════════════════════════════
+    var bX=2700,aW=440;
+    return{w:bX+aW,bX:bX,arenaW:aW,
+    plat:[
+      // Ground with larger pits
+      {x:0,   y:GY,w:280,h:30,type:'g'},
+      {x:360, y:GY,w:260,h:30,type:'g'}, // pit 80px
+      {x:700, y:GY,w:260,h:30,type:'g'}, // pit 80px
+      {x:1040,y:GY,w:280,h:30,type:'g'}, // pit 80px
+      {x:1400,y:GY,w:260,h:30,type:'g'}, // pit 80px
+      {x:1740,y:GY,w:280,h:30,type:'g'}, // pit 80px
+      {x:2100,y:GY,w:280,h:30,type:'g'}, // pit 80px
+      {x:2460,y:GY,w:240,h:30,type:'g'}, // approach
+      {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
+
+      // ZONE 1 (0-700): Skate plaza
+      // Low route — hop over small pit
+      {x:70,  y:355,w:80, h:12,type:'pp'},
+      {x:210, y:340,w:75, h:12,type:'rl'},
+      {x:315, y:322,w:60, h:12,type:'pp'},  // over pit
+      {x:415, y:340,w:80, h:12,type:'rl'},
+      {x:555, y:355,w:75, h:12,type:'pp'},
+      {x:660, y:335,w:55, h:12,type:'pp'},  // over pit
+      // Mid route
+      {x:90,  y:305,w:80, h:12,type:'pp'},
+      {x:235, y:288,w:80, h:12,type:'rl'},
+      {x:385, y:272,w:85, h:12,type:'pp'},
+      {x:535, y:288,w:80, h:12,type:'rl'},
+      {x:680, y:272,w:70, h:12,type:'pp'},
+      // High halfpipe route
+      {x:150, y:245,w:80, h:12,type:'pp'},
+      {x:310, y:228,w:80, h:12,type:'pp'},
+      {x:470, y:212,w:80, h:12,type:'pp'},
+      {x:630, y:228,w:80, h:12,type:'pp'},
+
+      // ZONE 2 (700-1040): Rail section
+      {x:740, y:355,w:80, h:12,type:'rl'},
+      {x:870, y:335,w:90, h:12,type:'rl'},
+      {x:1000,y:315,w:60, h:12,type:'rl'},
+      {x:990, y:355,w:60, h:12,type:'pp'},  // over pit
+      // Upper rails
+      {x:730, y:295,w:80, h:12,type:'rl'},
+      {x:870, y:272,w:90, h:12,type:'rl'},
+      {x:1010,y:252,w:80, h:12,type:'rl'},
+
+      // ZONE 3 (1040-1400): Big air section
+      {x:1090,y:355,w:75, h:12,type:'pp'},
+      {x:1205,y:332,w:80, h:12,type:'pp'},
+      {x:1340,y:312,w:75, h:12,type:'pp'},
+      {x:1350,y:355,w:65, h:12,type:'pp'},  // over pit
+      // Upper — bigger vertical range
+      {x:1080,y:292,w:75, h:12,type:'rl'},
+      {x:1200,y:268,w:80, h:12,type:'pp'},
+      {x:1335,y:245,w:75, h:12,type:'rl'},
+      // Very high perch
+      {x:1165,y:215,w:80, h:12,type:'pp'},
+
+      // ZONE 4 (1400-1740): Halfpipe valley
+      {x:1450,y:355,w:80, h:12,type:'rl'},
+      {x:1570,y:335,w:85, h:12,type:'pp'},
+      {x:1695,y:315,w:65, h:12,type:'rl'},
+      {x:1688,y:355,w:65, h:12,type:'pp'},  // over pit
+      {x:1470,y:292,w:80, h:12,type:'rl'},
+      {x:1605,y:268,w:85, h:12,type:'pp'},
+      {x:1740,y:245,w:80, h:12,type:'rl'},
+
+      // ZONE 5 (1740-2100): Trick zone
+      {x:1790,y:355,w:80, h:12,type:'pp'},
+      {x:1910,y:335,w:85, h:12,type:'rl'},
+      {x:2050,y:315,w:70, h:12,type:'pp'},
+      {x:2045,y:355,w:70, h:12,type:'pp'},  // over pit
+      {x:1800,y:288,w:80, h:12,type:'rl'},
+      {x:1940,y:265,w:85, h:12,type:'pp'},
+      {x:2080,y:242,w:80, h:12,type:'rl'},
+      {x:2010,y:212,w:80, h:12,type:'pp'},
+
+      // ZONE 6 (2100-2700): Final skate run
+      {x:2160,y:355,w:80, h:12,type:'pp'},
+      {x:2280,y:335,w:85, h:12,type:'rl'},
+      {x:2400,y:312,w:80, h:12,type:'pp'},
+      // High run
+      {x:2175,y:285,w:80, h:12,type:'rl'},
+      {x:2308,y:262,w:85, h:12,type:'pp'},
+      {x:2448,y:242,w:80, h:12,type:'rl'},
+
+      // Boss arena platforms (velcro citadel tiers)
+      {x:bX+25, y:GY-65, w:75,h:12,type:'pp'},
+      {x:bX+148,y:GY-110,w:75,h:12,type:'rl'},
+      {x:bX+272,y:GY-65, w:75,h:12,type:'pp'},
+      {x:bX+90, y:GY-42, w:55,h:12,type:'rl'},
+      {x:bX+220,y:GY-42, w:55,h:12,type:'rl'},
+    ],
+    en:[
+      {t:'sg',x:180, y:GY-30},{t:'db',x:440, y:GY-34},
+      {t:'lh',x:680, y:GY-28},{t:'sg',x:880, y:GY-30},
+      {t:'db',x:1120,y:GY-34},{t:'lh',x:1360,y:GY-28},
+      {t:'sg',x:1590,y:GY-30},{t:'db',x:1820,y:GY-34},
+      {t:'lh',x:2060,y:GY-28},{t:'sg',x:2300,y:GY-30},
+      {t:'lh',x:2500,y:GY-28},
+    ],
+    pk:[
+      {t:'h', x:100, y:GY-46},{t:'sp',x:370, y:GY-46},
+      {t:'h', x:640, y:GY-46},{t:'sh',x:900, y:GY-46},
+      {t:'bi',x:1160,y:GY-46},{t:'h', x:1430,y:GY-46},
+      {t:'sp',x:1690,y:GY-46},{t:'h', x:1960,y:GY-46},
+      {t:'sh',x:2220,y:GY-46},{t:'h', x:2490,y:GY-46},
+    ]};
+  }
+
+  // ══════════════════════════════════════
+  // LEVEL 2: HALL OF FAME
+  // Floating islands, huge gaps, precision platforming
+  // Multi-tier vertical design, requires mastery
+  // Boss: UN-LACED KING at x=3000
+  // ══════════════════════════════════════
+  var bX=3000,aW=520;
+  return{w:bX+aW,bX:bX,arenaW:aW,
+  plat:[
+    // Ground — smallest segments, biggest pits
+    {x:0,   y:GY,w:250,h:30,type:'g'},
+    {x:330, y:GY,w:220,h:30,type:'g'}, // pit 80px
+    {x:630, y:GY,w:220,h:30,type:'g'}, // pit 80px
+    {x:930, y:GY,w:240,h:30,type:'g'}, // pit 80px
+    {x:1250,y:GY,w:220,h:30,type:'g'}, // pit 80px
+    {x:1550,y:GY,w:240,h:30,type:'g'}, // pit 80px
+    {x:1870,y:GY,w:220,h:30,type:'g'}, // pit 80px
+    {x:2170,y:GY,w:240,h:30,type:'g'}, // pit 80px
+    {x:2490,y:GY,w:240,h:30,type:'g'}, // approach
+    {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
+
+    // ZONE 1 (0-650): Temple entrance
+    {x:60,  y:352,w:75, h:12,type:'fl'},
+    {x:185, y:332,w:70, h:12,type:'fl'},
+    {x:285, y:310,w:60, h:12,type:'fl'},  // over pit
+    {x:385, y:332,w:75, h:12,type:'fl'},
+    {x:510, y:312,w:70, h:12,type:'fl'},
+    {x:605, y:292,w:60, h:12,type:'fl'},  // over pit
+    // Mid
+    {x:80,  y:298,w:75, h:12,type:'fl'},
+    {x:215, y:275,w:70, h:12,type:'cv',d:1},
+    {x:365, y:258,w:75, h:12,type:'fl'},
+    {x:510, y:240,w:70, h:12,type:'fl'},
+    // High
+    {x:140, y:242,w:70, h:12,type:'fl'},
+    {x:295, y:222,w:70, h:12,type:'fl'},
+    {x:455, y:205,w:70, h:12,type:'fl'},
+    // Very high
+    {x:220, y:178,w:70, h:12,type:'fl'},
+    {x:385, y:162,w:70, h:12,type:'fl'},
+
+    // ZONE 2 (650-1000): Rising columns
+    {x:670, y:352,w:70, h:12,type:'fl'},
+    {x:785, y:328,w:70, h:12,type:'fl'},
+    {x:895, y:305,w:60, h:12,type:'fl'},
+    {x:890, y:352,w:55, h:12,type:'fl'},  // over pit
+    {x:680, y:292,w:70, h:12,type:'cv',d:-1},
+    {x:810, y:268,w:75, h:12,type:'fl'},
+    {x:950, y:248,w:70, h:12,type:'fl'},
+    // Column tops
+    {x:730, y:228,w:70, h:12,type:'fl'},
+    {x:880, y:208,w:70, h:12,type:'fl'},
+    {x:810, y:175,w:70, h:12,type:'fl'},
+
+    // ZONE 3 (1000-1400): Floating islands
+    {x:1000,y:348,w:70, h:12,type:'fl'},
+    {x:1110,y:322,w:70, h:12,type:'fl'},
+    {x:1210,y:298,w:60, h:12,type:'fl'},
+    {x:1200,y:348,w:60, h:12,type:'fl'},  // over pit
+    {x:1320,y:328,w:70, h:12,type:'fl'},
+    {x:1020,y:285,w:70, h:12,type:'fl'},
+    {x:1140,y:262,w:75, h:12,type:'cv',d:1},
+    {x:1275,y:242,w:70, h:12,type:'fl'},
+    // Upper islands
+    {x:1060,y:225,w:70, h:12,type:'fl'},
+    {x:1195,y:205,w:70, h:12,type:'fl'},
+    {x:1330,y:188,w:70, h:12,type:'fl'},
+    // Peak island
+    {x:1195,y:162,w:70, h:12,type:'fl'},
+
+    // ZONE 4 (1400-1700): The gauntlet
+    {x:1410,y:348,w:68, h:12,type:'fl'},
+    {x:1522,y:322,w:68, h:12,type:'fl'},
+    {x:1500,y:348,w:60, h:12,type:'fl'},  // over pit
+    {x:1430,y:292,w:68, h:12,type:'cv',d:-1},
+    {x:1548,y:268,w:68, h:12,type:'fl'},
+    {x:1668,y:248,w:68, h:12,type:'fl'},
+    {x:1468,y:228,w:68, h:12,type:'fl'},
+    {x:1588,y:205,w:68, h:12,type:'fl'},
+    {x:1528,y:175,w:68, h:12,type:'fl'},
+
+    // ZONE 5 (1700-2100): Sky bridge
+    {x:1760,y:345,w:70, h:12,type:'fl'},
+    {x:1875,y:322,w:70, h:12,type:'fl'},
+    {x:1825,y:348,w:60, h:12,type:'fl'},  // over pit
+    {x:2000,y:325,w:70, h:12,type:'fl'},
+    {x:2110,y:302,w:65, h:12,type:'fl'},
+    {x:2065,y:348,w:65, h:12,type:'fl'},  // over pit
+    {x:1780,y:288,w:70, h:12,type:'fl'},
+    {x:1910,y:265,w:70, h:12,type:'fl'},
+    {x:2050,y:245,w:70, h:12,type:'fl'},
+    {x:1860,y:225,w:70, h:12,type:'fl'},
+    {x:1990,y:205,w:70, h:12,type:'fl'},
+    {x:1930,y:178,w:70, h:12,type:'fl'},
+
+    // ZONE 6 (2100-3000): Final ascent
+    {x:2200,y:345,w:70, h:12,type:'fl'},
+    {x:2318,y:322,w:70, h:12,type:'fl'},
+    {x:2440,y:300,w:70, h:12,type:'fl'},
+    {x:2220,y:288,w:70, h:12,type:'cv',d:1},
+    {x:2352,y:265,w:70, h:12,type:'fl'},
+    {x:2485,y:245,w:70, h:12,type:'fl'},
+    {x:2270,y:228,w:70, h:12,type:'fl'},
+    {x:2408,y:208,w:70, h:12,type:'fl'},
+    {x:2550,y:188,w:70, h:12,type:'fl'},
+    {x:2350,y:178,w:70, h:12,type:'fl'},
+    {x:2490,y:158,w:70, h:12,type:'fl'},
+
+    // Boss arena (Un-Laced King's Dark Palace tiers)
+    {x:bX+18, y:GY-78, w:75,h:12,type:'fl'},
+    {x:bX+138,y:GY-130,w:75,h:12,type:'fl'},
+    {x:bX+262,y:GY-175,w:80,h:12,type:'fl'},
+    {x:bX+388,y:GY-130,w:75,h:12,type:'fl'},
+    {x:bX+55, y:GY-48, w:55,h:12,type:'cv',d:1},
+    {x:bX+200,y:GY-48, w:55,h:12,type:'cv',d:-1},
+    {x:bX+348,y:GY-48, w:55,h:12,type:'cv',d:1},
+  ],
+  en:[
+    {t:'lh',x:200, y:GY-28},{t:'wz',x:430, y:GY-32},
+    {t:'db',x:640, y:GY-34},{t:'lh',x:870, y:GY-28},
+    {t:'wz',x:1080,y:GY-32},{t:'db',x:1310,y:GY-34},
+    {t:'lh',x:1530,y:GY-28},{t:'wz',x:1760,y:GY-32},
+    {t:'db',x:1990,y:GY-34},{t:'lh',x:2220,y:GY-28},
+    {t:'wz',x:2450,y:GY-32},{t:'lh',x:2700,y:GY-28},
+  ],
+  pk:[
+    {t:'h', x:80,  y:GY-46},{t:'sh',x:350, y:GY-46},
+    {t:'h', x:600, y:GY-46},{t:'bi',x:880, y:GY-46},
+    {t:'h', x:1120,y:GY-46},{t:'sp',x:1380,y:GY-46},
+    {t:'h', x:1620,y:GY-46},{t:'sh',x:1890,y:GY-46},
+    {t:'h', x:2140,y:GY-46},{t:'bi',x:2410,y:GY-46},
+    {t:'h', x:2680,y:GY-46},
+  ]};
 }
 
 function drwPlat(plats){
