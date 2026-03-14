@@ -1,8 +1,3 @@
-bash
-
-cat /home/claude/thread-ripper-v2.html
-Output
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,36 +10,86 @@ Output
 html,body{background:#111;overflow:hidden;touch-action:none}
 @keyframes rb{0%{border-color:hsl(0,100%,55%)}25%{border-color:hsl(90,100%,50%)}50%{border-color:hsl(200,100%,55%)}75%{border-color:hsl(300,100%,55%)}100%{border-color:hsl(0,100%,55%)}}
 @keyframes rbb{0%{background:linear-gradient(90deg,hsl(0,85%,38%),hsl(60,100%,45%),hsl(120,85%,38%))}33%{background:linear-gradient(90deg,hsl(180,85%,38%),hsl(240,100%,48%),hsl(300,85%,42%))}66%{background:linear-gradient(90deg,hsl(320,85%,40%),hsl(20,100%,45%),hsl(80,85%,38%))}100%{background:linear-gradient(90deg,hsl(0,85%,38%),hsl(60,100%,45%),hsl(120,85%,38%))}}
-@keyframes b1{0%{background:hsl(0,75%,32%)}50%{background:hsl(180,75%,28%)}100%{background:hsl(0,75%,32%)}}
-@keyframes b2{0%{background:hsl(120,75%,28%)}50%{background:hsl(300,75%,32%)}100%{background:hsl(120,75%,28%)}}
-@keyframes b3{0%{background:hsl(240,75%,35%)}50%{background:hsl(60,75%,30%)}100%{background:hsl(240,75%,35%)}}
-@keyframes b4{0%{background:hsl(30,75%,30%)}50%{background:hsl(210,75%,35%)}100%{background:hsl(30,75%,30%)}}
-@keyframes b5{0%{background:hsl(270,75%,35%)}50%{background:hsl(90,75%,30%)}100%{background:hsl(270,75%,35%)}}
+@keyframes b1{0%{background:hsl(0,70%,28%)}50%{background:hsl(180,70%,24%)}100%{background:hsl(0,70%,28%)}}
+@keyframes b2{0%{background:hsl(120,70%,24%)}50%{background:hsl(300,70%,28%)}100%{background:hsl(120,70%,24%)}}
+@keyframes b3{0%{background:hsl(220,80%,32%)}50%{background:hsl(40,80%,28%)}100%{background:hsl(220,80%,32%)}}
+@keyframes b4{0%{background:hsl(280,75%,30%)}50%{background:hsl(100,75%,26%)}100%{background:hsl(280,75%,30%)}}
+@keyframes b5{0%{background:hsl(10,75%,28%)}50%{background:hsl(190,75%,26%)}100%{background:hsl(10,75%,28%)}}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
 #wrap{display:flex;flex-direction:column;width:100%;max-width:430px;margin:0 auto;border:3px solid hsl(0,100%,55%);border-radius:10px;overflow:hidden;animation:rb 4s linear infinite;box-shadow:0 0 18px rgba(255,50,150,0.5)}
 #wrap.mini #cv,#wrap.mini #ctrl{display:none}
-#bar{display:flex;align-items:center;height:36px;padding:0 7px;gap:5px;flex-shrink:0;animation:rbb 5s linear infinite;user-select:none;-webkit-user-select:none}
+#bar{display:flex;align-items:center;height:38px;padding:0 8px;gap:5px;flex-shrink:0;animation:rbb 5s linear infinite;user-select:none;-webkit-user-select:none}
 #bar span{color:#fff;font-family:'Press Start 2P',monospace;font-size:6px;flex:1;text-shadow:1px 1px 0 #0006;letter-spacing:.5px}
-.bb{background:rgba(0,0,0,0.45);border:2px solid rgba(255,255,255,0.4);border-radius:5px;color:#fff;font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 7px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
+.bb{background:rgba(0,0,0,0.45);border:2px solid rgba(255,255,255,0.35);border-radius:5px;color:#fff;font-family:'Press Start 2P',monospace;font-size:7px;padding:5px 8px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
 .bb:active{opacity:.5}
 #cvwrap{width:100%;background:#000;display:flex;justify-content:center;align-items:center;overflow:hidden;flex-shrink:0}
 #cv{display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;max-width:100%}
-#ctrl{background:#0d0d0d;padding:10px 8px 12px;flex-shrink:0;border-top:2px solid rgba(255,255,255,0.08)}
-#crow{display:flex;justify-content:space-between;align-items:center;gap:4px}
-#dleft{display:flex;gap:8px}
-#dright{display:flex;gap:6px;align-items:center}
-#smid{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px}
-#smid .sl{color:#555;font-family:'Press Start 2P',monospace;font-size:4px}
-#smid .sv{color:#fff;font-family:'Press Start 2P',monospace;font-size:8px}
-.gb{width:62px;height:62px;border-radius:50%;border:3px solid rgba(255,255,255,0.25);color:#fff;font-family:'Press Start 2P',monospace;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;box-shadow:0 3px 10px rgba(0,0,0,0.6);transition:transform .06s,opacity .06s}
-.gb:active,.gb.on{transform:scale(.85);opacity:.65}
-#bL{animation:b1 3s linear infinite;font-size:14px}
-#bR{animation:b2 3s linear infinite;font-size:14px}
-#bJ{animation:b3 2s linear infinite;font-size:7px;width:68px;height:68px}
-#bT{animation:b4 2.5s linear infinite;font-size:6px}
-#bA{animation:b5 2s linear infinite;font-size:6px;width:56px;height:56px}
+/* CONTROL PANEL */
+#ctrl{background:#0a0a0a;padding:12px 10px 14px;flex-shrink:0;border-top:2px solid rgba(255,255,255,0.1)}
+#crow{display:flex;justify-content:space-between;align-items:center;gap:6px}
+/* LEFT - D-PAD zone */
+#dpad-zone{display:flex;flex-direction:column;align-items:center;gap:4px}
+#dpad-row{display:flex;align-items:center;gap:4px}
+/* RIGHT - action buttons */
+#act-zone{display:flex;flex-direction:column;align-items:center;gap:6px}
+#act-top{display:flex;gap:8px;align-items:center}
+#act-bot{display:flex;gap:8px;align-items:center}
+/* CENTER info */
+#smid{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px}
+#smid .sl{color:#444;font-family:'Press Start 2P',monospace;font-size:4px;letter-spacing:.5px}
+#smid .sv{color:#fff;font-family:'Press Start 2P',monospace;font-size:9px}
+#smid .hint{color:#555;font-family:'Press Start 2P',monospace;font-size:3.5px;text-align:center;line-height:1.6}
+/* BASE BUTTON */
+.gb{border-radius:50%;border:3px solid rgba(255,255,255,0.2);color:#fff;font-family:'Press Start 2P',monospace;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;box-shadow:0 4px 12px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.1);transition:transform .05s,box-shadow .05s;position:relative;flex-shrink:0}
+.gb:active,.gb.on{transform:scale(.82)!important;box-shadow:0 1px 4px rgba(0,0,0,0.8),inset 0 2px 4px rgba(0,0,0,0.4)!important;animation:none!important}
+/* D-PAD buttons - bigger, flatter */
+#bL,#bR{width:58px;height:58px;border-radius:14px;font-size:18px;animation:b1 3s linear infinite}
+#bR{animation:b2 3s linear infinite}
+/* JUMP - biggest, most important */
+#bJ{width:76px;height:76px;font-size:8px;animation:b3 2s linear infinite;border-width:4px}
+/* TRICK */
+#bT{width:62px;height:62px;font-size:6px;animation:b4 2.5s linear infinite}
+/* ATTACK */
+#bA{width:56px;height:56px;font-size:6px;animation:b5 2s linear infinite}
+/* Label under buttons */
+.btn-label{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);color:#444;font-family:'Press Start 2P',monospace;font-size:3.5px;white-space:nowrap}
+/* Tutorial overlay */
+#tut{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#tut.hidden{display:none}
+#tut-box{max-width:380px;width:100%;background:#111;border:3px solid;border-radius:12px;padding:20px;animation:rb 3s linear infinite}
+#tut-title{font-family:'Press Start 2P',monospace;font-size:11px;text-align:center;margin-bottom:16px;background:linear-gradient(90deg,hsl(0,90%,60%),hsl(120,90%,55%),hsl(240,90%,65%));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.tut-step{display:none;flex-direction:column;gap:12px}
+.tut-step.active{display:flex}
+.tut-ctrl{display:flex;align-items:center;gap:14px;background:#1a1a1a;border-radius:10px;padding:12px}
+.tut-btn{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;border:3px solid rgba(255,255,255,0.2);font-family:'Press Start 2P',monospace;animation:pulse 1.5s ease-in-out infinite}
+.tut-txt{font-family:'Press Start 2P',monospace;font-size:6px;color:#ccc;line-height:1.8}
+.tut-txt b{font-size:7px}
+.tut-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.tut-nav button{font-family:'Press Start 2P',monospace;font-size:7px;padding:8px 14px;border-radius:6px;border:2px solid;cursor:pointer;touch-action:manipulation}
+#tut-skip{background:transparent;border-color:#444;color:#666}
+#tut-skip:active{color:#aaa;border-color:#aaa}
+#tut-next{background:hsl(120,70%,25%);border-color:hsl(120,80%,50%);color:#fff}
+#tut-next:active{opacity:.7}
+#tut-dots{display:flex;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#333}
+.dot.on{background:#fff}
 </style>
 </head>
 <body>
+<!-- TUTORIAL OVERLAY -->
+<div id="tut" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.94);z-index:999;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;">
+  <div style="max-width:360px;width:100%;background:#111;border:3px solid hsl(0,100%,55%);border-radius:12px;padding:18px;animation:rb 3s linear infinite;font-family:'Press Start 2P',monospace;">
+    <div id="tut-title" style="font-size:10px;text-align:center;margin-bottom:14px;color:#fff;"></div>
+    <div id="tut-body" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+      <button id="tut-skip" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 11px;background:transparent;border:2px solid #444;border-radius:5px;color:#666;cursor:pointer;touch-action:manipulation;">SKIP</button>
+      <div id="tut-dots" style="display:flex;gap:6px;"></div>
+      <button id="tut-next" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 12px;background:hsl(120,60%,22%);border:2px solid hsl(120,80%,45%);border-radius:5px;color:#fff;cursor:pointer;touch-action:manipulation;">NEXT ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME -->
 <div id="wrap">
   <div id="bar">
     <span>🛹 THREAD RIPPER</span>
@@ -52,24 +97,6 @@ html,body{background:#111;overflow:hidden;touch-action:none}
     <button class="bb" id="mbtn">▼ MIN</button>
   </div>
   <div id="cvwrap"><canvas id="cv"></canvas></div>
-  <div id="ctrl">
-    <div id="crow">
-      <div id="dleft">
-        <div class="gb" id="bL">◀</div>
-        <div class="gb" id="bR">▶</div>
-      </div>
-      <div id="smid">
-        <div class="sl">SCORE</div>
-        <div class="sv" id="sc">0</div>
-        <div class="sl" id="bs">LIVES ♥♥♥</div>
-      </div>
-      <div id="dright">
-        <div class="gb" id="bA">ATK</div>
-        <div class="gb" id="bT">TRICK</div>
-        <div class="gb" id="bJ">JUMP</div>
-      </div>
-    </div>
-  </div>
 </div>
 <script>
 const GW=480,GH=270,GR=0.45,PS=3,JF=-10.5;
@@ -103,12 +130,13 @@ function tdg(x1,y1,x2,y2,o=0,sp=1){
 // Resize - portrait, fills phone width
 function resize(){
   if(mini)return;
-  const sw=Math.min(window.innerWidth,430);
+  const sw=Math.min(window.innerWidth,480);
   scale=sw/GW;
   cv.width=GW;cv.height=GH;
-  cv.style.width=Math.floor(GW*scale)+'px';cv.style.height=Math.floor(GH*scale)+'px';
-  document.getElementById('cvwrap').style.height=Math.floor(GH*scale)+'px';
-  wrap.style.width=sw+'px';
+  const ch=Math.floor(GH*scale);
+  cv.style.width=Math.floor(GW*scale)+'px';cv.style.height=ch+'px';
+  document.getElementById('cvwrap').style.height=ch+'px';
+  wrap.style.width=Math.floor(GW*scale)+'px';
 }
 resize();window.addEventListener('resize',resize);
 
@@ -116,6 +144,8 @@ resize();window.addEventListener('resize',resize);
 document.getElementById('mbtn').addEventListener('click',()=>{
   mini=!mini;wrap.classList.toggle('mini',mini);
   document.getElementById('mbtn').textContent=mini?'▲ MAX':'▼ MIN';
+  const cw=document.getElementById('cvwrap');
+  if(cw)cw.style.display=mini?'none':'flex';
   if(!mini){setTimeout(resize,40);getAC();}
 });
 document.getElementById('mbtn').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('mbtn').click();});
@@ -165,25 +195,237 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')keys._jh=false;});
 function clrK(){keys._jp=false;keys._ap=false;keys._tp=false;keys._pp=false;keys._ep=false;touch.jp=false;touch.tp=false;}
 
-// HTML button wiring
-function wire(id,dn,up){
-  const el=document.getElementById(id);if(!el)return;
-  function d(e){e.preventDefault();el.classList.add('on');dn();getAC();}
-  function u(e){e.preventDefault();el.classList.remove('on');if(up)up();}
-  el.addEventListener('touchstart',d,{passive:false});el.addEventListener('touchend',u,{passive:false});el.addEventListener('touchcancel',u,{passive:false});
-  el.addEventListener('mousedown',d);el.addEventListener('mouseup',u);el.addEventListener('mouseleave',u);
-}
-wire('bL',()=>{touch.L=true;},()=>{touch.L=false;});
-wire('bR',()=>{touch.R=true;},()=>{touch.R=false;});
-wire('bJ',()=>{touch.jp=true;touch.J=true;},()=>{touch.J=false;});
-wire('bT',()=>{touch.tp=true;touch.Tr=true;},()=>{touch.Tr=false;});
-wire('bA',()=>{keys._ap=true;},()=>{});
+// ============================================================
+// DEVICE DETECTION
+// ============================================================
+const isMob=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 
-// Title/Game over tap
+// ============================================================
+// SWIPE CONTROLS (mobile only - no buttons)
+// LEFT HALF:  hold left 40% = move left | hold right 40% = move right
+// RIGHT HALF: swipe UP = jump | swipe DOWN = trick | tap = attack
+// ============================================================
+const aT2={};  // active touches tracker
+const SW=30,ST2=380; // swipe threshold px, max time ms
+
+function getGP(t){
+  const r=cv.getBoundingClientRect();
+  return{x:(t.clientX-r.left)*(GW/r.width),y:(t.clientY-r.top)*(GH/r.height)};
+}
+
+cv.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t=>{
+    const p=getGP(t),now=Date.now();
+    aT2[t.identifier]={sx:p.x,sy:p.y,cx:p.x,cy:p.y,st:now,side:p.x<GW/2?'L':'R'};
+    if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();return;}
+    if(gState===ST.PA){
+      const r2=cv.getBoundingClientRect();
+      const cx2=(t.clientX-r2.left)*(GW/r2.width),cy2=(t.clientY-r2.top)*(GH/r2.height);
+      pMB.forEach((b,i)=>{if(b.x&&cx2>=b.x&&cx2<=b.x+b.w&&cy2>=b.y&&cy2<=b.y+b.h){pCur=i;setTimeout(doSel,80);}});
+      return;
+    }
+    if(gState!==ST.P&&gState!==ST.B)return;
+    getAC();
+    if(p.x<GW/2){
+      // Left zone: left 40% = left, middle-left 40% = right
+      if(p.x<GW*0.22){touch.L=true;touch.R=false;}
+      else{touch.R=true;touch.L=false;}
+    }
+  });
+},{passive:false});
+
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  Array.from(e.changedTouches).forEach(t=>{
+    if(!aT2[t.identifier])return;
+    const p=getGP(t);
+    aT2[t.identifier].cx=p.x;aT2[t.identifier].cy=p.y;
+    // Update movement if left finger slides
+    if(aT2[t.identifier].side==='L'){
+      if(p.x<GW*0.22){touch.L=true;touch.R=false;}
+      else if(p.x<GW/2){touch.R=true;touch.L=false;}
+      else{touch.L=false;touch.R=false;}
+    }
+  });
+},{passive:false});
+
 cv.addEventListener('touchend',e=>{
   e.preventDefault();
-  if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;}
+  Array.from(e.changedTouches).forEach(t=>{
+    const tr=aT2[t.identifier];
+    if(!tr){return;}
+    const dx=tr.cx-tr.sx,dy=tr.cy-tr.sy;
+    const elapsed=Date.now()-tr.st;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if((gState===ST.P||gState===ST.B)&&tr.side==='R'){
+      if(dist>SW&&elapsed<ST2){
+        // Swipe gesture on right half
+        if(Math.abs(dy)>Math.abs(dx)){
+          if(dy<0){touch.jp=true;keys._jp=true;}  // swipe UP = jump
+          else{touch.tp=true;keys._tp=true;}       // swipe DOWN = trick
+        } else {
+          keys._ap=true;                           // swipe LEFT/RIGHT = attack
+        }
+      } else if(dist<20&&elapsed<250){
+        keys._ap=true;                             // tap right = attack
+      }
+    }
+    delete aT2[t.identifier];
+    // Release movement only if no left touches remain
+    if(!Object.values(aT2).some(a=>a.side==='L')){touch.L=false;touch.R=false;}
+  });
 },{passive:false});
+
+cv.addEventListener('touchcancel',e=>{
+  Array.from(e.changedTouches).forEach(t=>{delete aT2[t.identifier];});
+  touch.L=false;touch.R=false;
+},{passive:false});
+
+// ============================================================
+// TUTORIAL SYSTEM - auto-detects mobile vs desktop
+// ============================================================
+const TUT_KEY='trTutDone';
+let tutIdx=0;
+
+// MOBILE tutorial steps (swipe controls)
+const MOB_TUT=[
+  {
+    icon:'👆',col:'hsl(200,80%,35%)',
+    title:'MOVE',
+    lines:['HOLD LEFT SIDE of screen','◀ tap far-left = move left','▶ tap mid-left = move right','Slide finger to change dir!']
+  },
+  {
+    icon:'⬆️',col:'hsl(120,70%,28%)',
+    title:'JUMP',
+    lines:['SWIPE UP on right side','of the screen to jump!','In Level 2 you unlock','DOUBLE JUMP — swipe up twice!']
+  },
+  {
+    icon:'⬇️',col:'hsl(280,70%,32%)',
+    title:'DO TRICKS',
+    lines:['SWIPE DOWN on right side','while in the air to do','a skate trick! Earns bonus','points + looks sick! 🛹']
+  },
+  {
+    icon:'👊',col:'hsl(10,75%,30%)',
+    title:'ATTACK',
+    lines:['TAP the right side of','the screen to whip your','lace at enemies!','Defeat bosses to advance!']
+  },
+  {
+    icon:'🛹',col:'hsl(45,80%,28%)',
+    title:'THE QUEST',
+    lines:['Skate through 3 worlds.','Defeat bosses to progress.','Viktor STEALS your board!','Find the Wizard — GLOW BOARD!']
+  }
+];
+
+// DESKTOP tutorial steps (keyboard controls)
+const DSK_TUT=[
+  {
+    icon:'⌨️',col:'hsl(200,80%,35%)',
+    title:'MOVE',
+    lines:['A / ← = skate left','D / → = skate right','Hold key to keep moving','Release to slow down']
+  },
+  {
+    icon:'🆙',col:'hsl(120,70%,28%)',
+    title:'JUMP',
+    lines:['SPACE or W or ↑ to jump','Press again in air for','DOUBLE JUMP (Level 2+)!','Land on platforms to grind!']
+  },
+  {
+    icon:'🔽',col:'hsl(280,70%,32%)',
+    title:'DO TRICKS',
+    lines:['Press C or S or ↓','while in the AIR to do','a skate trick!','Trick score: +50 pts (150 on Glow Board)']
+  },
+  {
+    icon:'⚔️',col:'hsl(10,75%,30%)',
+    title:'ATTACK',
+    lines:['Press X or Z to whip','your lace at enemies.','0.5 second cooldown.','Attack bosses to defeat them!']
+  },
+  {
+    icon:'⏸',col:'hsl(45,80%,28%)',
+    title:'OTHER KEYS',
+    lines:['P = pause / unpause','ENTER = confirm menus','ESC / P in pause = resume','Boss phases get harder — good luck!']
+  }
+];
+
+function buildTut(){
+  const steps=isMob?MOB_TUT:DSK_TUT;
+  const title=document.getElementById('tut-title');
+  const body=document.getElementById('tut-body');
+  const dots=document.getElementById('tut-dots');
+  title.textContent=isMob?'SWIPE CONTROLS':'KEYBOARD CONTROLS';
+  // Build dots
+  dots.innerHTML='';
+  steps.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='width:8px;height:8px;border-radius:50%;background:'+(i===0?'#fff':'#333')+';transition:background .2s;';
+    d.id='dot'+i;dots.appendChild(d);
+  });
+  renderTutStep(0);
+}
+
+function renderTutStep(i){
+  const steps=isMob?MOB_TUT:DSK_TUT;
+  const s=steps[i];
+  const body=document.getElementById('tut-body');
+  body.innerHTML='';
+  // Icon + title row
+  const row=document.createElement('div');
+  row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:12px;';
+  const icon=document.createElement('div');
+  icon.style.cssText='width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;background:'+s.col+';border:2px solid rgba(255,255,255,0.2);animation:pulse 1.5s ease-in-out infinite;';
+  icon.textContent=s.icon;
+  const info=document.createElement('div');
+  info.style.cssText='display:flex;flex-direction:column;gap:6px;';
+  const ttl=document.createElement('div');
+  ttl.style.cssText='font-family:"Press Start 2P",monospace;font-size:9px;color:#fff;';
+  ttl.textContent=s.title;
+  info.appendChild(ttl);
+  s.lines.forEach(ln=>{
+    const lEl=document.createElement('div');
+    lEl.style.cssText='font-family:"Press Start 2P",monospace;font-size:5.5px;color:#aaa;line-height:1.7;';
+    lEl.textContent=ln;
+    info.appendChild(lEl);
+  });
+  row.appendChild(icon);row.appendChild(info);body.appendChild(row);
+  // Progress indicator
+  const prog=document.createElement('div');
+  prog.style.cssText='font-family:"Press Start 2P",monospace;font-size:4.5px;color:#555;text-align:center;';
+  prog.textContent=(i+1)+' / '+steps.length;
+  body.appendChild(prog);
+  // Update dots
+  (isMob?MOB_TUT:DSK_TUT).forEach((_,j)=>{
+    const d=document.getElementById('dot'+j);
+    if(d)d.style.background=j===i?'#fff':'#333';
+  });
+  // Update next button text
+  const nxt=document.getElementById('tut-next');
+  if(nxt)nxt.textContent=i===steps.length-1?'PLAY! ▶':'NEXT ▶';
+}
+
+function nextTutStep(){
+  const steps=isMob?MOB_TUT:DSK_TUT;
+  tutIdx++;
+  if(tutIdx>=steps.length){closeTut();}
+  else{renderTutStep(tutIdx);}
+}
+
+function closeTut(){
+  document.getElementById('tut').style.display='none';
+  localStorage.setItem(TUT_KEY,'1');
+  getAC();
+}
+
+function showTut(){
+  tutIdx=0;
+  buildTut();
+  document.getElementById('tut').style.display='flex';
+}
+
+document.getElementById('tut-next').addEventListener('click',nextTutStep);
+document.getElementById('tut-next').addEventListener('touchend',e=>{e.preventDefault();nextTutStep();});
+document.getElementById('tut-skip').addEventListener('click',closeTut);
+document.getElementById('tut-skip').addEventListener('touchend',e=>{e.preventDefault();closeTut();});
+
+// Title/game over tap now handled in swipe touchstart above
 
 // Pause bar button
 const pbtn=document.getElementById('pbtn');
@@ -438,12 +680,7 @@ function drwHUD(pl){
   else if(pl.gB){ctx.fillStyle=td(0,3,100,65);ctx.font='5px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('★ GLOW BOARD ★',GW/2,12);}
   else if(pl.wt>0){ctx.fillStyle=td(120,1);ctx.font='5px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('WAX ON!',GW/2,12);}
   if(!pl.og&&pl.hB&&pl.tCool<=0){ctx.fillStyle=tda(180,2,.5);ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('TAP TRICK!',GW/2,GH-30);}
-  // Update HTML score & lives
-  const sc=document.getElementById('sc');if(sc)sc.textContent=gScore;
-  const bs=document.getElementById('bs');if(bs)bs.textContent='LIVES '+'♥'.repeat(Math.max(0,pl.lives));
-  // Animate button borders
-  const h=(Date.now()*.1)%360;
-  ['bL','bR','bJ','bT','bA'].forEach((id,i)=>{const el=document.getElementById(id);if(el&&!el.classList.contains('on'))el.style.borderColor=`hsl(${(h+i*55)%360},90%,60%)`;});
+  // No HTML button panel — swipe-only controls
   ctx.textAlign='left';
 }
 
@@ -498,6 +735,28 @@ function drwPause(){
   ctx.fillStyle='rgba(100,100,100,.7)';ctx.font='4px "Press Start 2P"';ctx.fillText('UP/DOWN=SELECT  ENTER=CONFIRM',GW/2,py+ph-8);ctx.textAlign='left';
 }
 function drwScan(){ctx.fillStyle='rgba(0,0,0,.07)';for(let y=0;y<GH;y+=3)ctx.fillRect(0,y,GW,1);}
+
+// Swipe zone hint - drawn for first 12 seconds on mobile
+let hintTimer=12;
+function drwSwipeHint(dt){
+  if(!isMob||hintTimer<=0)return;
+  hintTimer-=dt;
+  const a=Math.min(1,hintTimer/3)*0.55;
+  ctx.globalAlpha=a;
+  // Left zone divider
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(GW/2,20);ctx.lineTo(GW/2,GH-20);ctx.stroke();
+  ctx.setLineDash([]);
+  // Left zone label
+  ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='5px "Press Start 2P"';ctx.textAlign='center';
+  ctx.fillText('HOLD LEFT',GW*0.22,GH/2-12);
+  ctx.fillText('< MOVE >',GW*0.22,GH/2+4);
+  // Right zone labels
+  ctx.fillText('SWIPE ↑ JUMP',GW*0.75,GH/2-20);
+  ctx.fillText('SWIPE ↓ TRICK',GW*0.75,GH/2-4);
+  ctx.fillText('TAP = ATTACK',GW*0.75,GH/2+12);
+  ctx.globalAlpha=1;ctx.textAlign='left';
+}
 function drwWDlg(){if(!wDlg)return;ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(18,GH-58,GW-36,42);ctx.strokeStyle=td(0,2);ctx.lineWidth=2;ctx.strokeRect(18,GH-58,GW-36,42);ctx.fillStyle='#FFF';ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('WIZARD: "TAKE THE GLOW BOARD!',GW/2,GH-44);ctx.fillText('ANCIENT SKATE MAGIC AWAITS!"',GW/2,GH-32);ctx.fillStyle=td(60,2);ctx.fillText('[★ GLOW BOARD OBTAINED! ★]',GW/2,GH-20);ctx.textAlign='left';}
 function drwNBD(){if(!noBrd)return;ctx.fillStyle='rgba(0,0,0,.8)';ctx.fillRect(18,GH-48,GW-36,32);ctx.strokeStyle='#F44';ctx.lineWidth=2;ctx.strokeRect(18,GH-48,GW-36,32);ctx.fillStyle='#F44';ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('VIKTOR STOLE YOUR BOARD!',GW/2,GH-34);ctx.fillText('FIND THE WIZARD FOR GLOW BOARD!',GW/2,GH-22);ctx.textAlign='left';}
 
@@ -525,6 +784,8 @@ function initLv(i){
 function restart(){
   player=new Player();gScore=0;parts=[];bgC=[];
   initLv(0);gState=ST.LT;trT=2;pbtn.textContent='⏸ PAUSE';
+  // Show tutorial if never seen
+  if(!localStorage.getItem(TUT_KEY)){showTut();}
 }
 
 // Game loop
@@ -560,7 +821,7 @@ function gLoop(ts){
     if(!bSpawn&&player.x>lData.eX){if(cLv<2){cLv++;initLv(cLv);gState=ST.LT;trT=2;}else{gState=ST.W;wtT=0;}}
     if(player.lives<=0){stopM();SFX.go();if(gScore>hiSc){hiSc=gScore;localStorage.setItem('trhi',''+hiSc);}gState=ST.GO;}
     drwBg(cLv,cam.x);ctx.save();cam.on();drwPlat(lData.plat,cLv);pickups.forEach(p=>p.drw());enemies.forEach(e=>e.drw());if(wizard)wizard.drw();if(boss)boss.drw();player.drw();drwP();cam.off();ctx.restore();
-    drwHUD(player);drwWDlg();drwNBD();drwScan();
+    drwHUD(player);drwWDlg();drwNBD();drwScan();drwSwipeHint(dt);
     if(keys._pp){pCur=0;gState=ST.PA;pbtn.textContent='▶ PLAY';}
   }
   else if(gState===ST.PA){
