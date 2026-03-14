@@ -162,11 +162,7 @@ setTimeout(resize,500);
 
 // Audio
 var AC=null;
-function getAC(){
-  if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
-  if(AC.state==='suspended')AC.resume();
-  return AC;
-}
+// getAC defined in music block
 function tone(f,d,t,v,dl){t=t||'square';v=v||.1;dl=dl||0;try{var a=getAC(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,a.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dl+d);o.start(a.currentTime+dl);o.stop(a.currentTime+dl+d);}catch(e){}}
 var SFX={
   jump:function(){tone(280,.05);tone(460,.08,'square',.1,.04);},
@@ -184,35 +180,76 @@ var SFX={
   go:function(){[400,300,200,150].forEach(function(f,i){tone(f,.15,'sawtooth',.2,i*.12);});},
   lup:function(){[400,600,800,1000].forEach(function(f,i){tone(f,.1,'square',.1,i*.09);});}
 };
-// Music
-var mPlay=false,mIdx=0,mOn=true;
+// ============================================================
+// MUSIC — iOS Safari compatible
+// iOS requires AudioContext.resume() called synchronously in
+// a touch handler. We store a pendingMusic level and start
+// it the next time a touch event fires after AC is running.
+// ============================================================
+var mPlay=false,mIdx=0,mOn=true,mLv=0,mPending=false;
 var MN=[
-  [262,330,392,330,262,294,330,262],
-  [294,370,440,370,330,392,440,330],
-  [330,415,494,415,370,440,494,370]
+  [262,294,330,262,294,330,392,330],
+  [294,330,370,294,330,370,440,370],
+  [330,370,415,330,370,415,494,415]
 ];
-function startM(lv){
-  stopM();if(!mOn)return;mPlay=true;mIdx=0;
+
+function getAC(){
+  if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();
+  return AC;
+}
+
+// Called on every user touch — resumes AC and starts pending music
+function unlockAudio(){
+  var a=getAC();
+  if(a.state==='suspended'){
+    a.resume().then(function(){
+      if(mPending){mPending=false;_startMNow(mLv);}
+    });
+  } else if(a.state==='running'){
+    if(mPending){mPending=false;_startMNow(mLv);}
+  }
+}
+
+function _startMNow(lv){
+  if(!mOn||!mPlay)return;
   var n=MN[Math.min(lv,2)];
-  function lp(){
+  (function lp(){
     if(!mPlay)return;
     try{
       var a=getAC();
-      // Resume context if suspended (required by browser autoplay policy)
-      if(a.state==='suspended'){a.resume();}
+      if(a.state!=='running'){mPending=true;mLv=lv;return;} // wait for next touch
       var o=a.createOscillator(),g=a.createGain();
       o.connect(g);g.connect(a.destination);
-      o.type='square';o.frequency.value=n[mIdx%n.length];
-      g.gain.setValueAtTime(.04,a.currentTime);
-      g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.18);
-      o.start(a.currentTime);o.stop(a.currentTime+.20);
-      mIdx++;setTimeout(lp,220);
+      o.type='square';
+      o.frequency.value=n[mIdx%n.length];
+      g.gain.setValueAtTime(0.05,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.18);
+      o.start(a.currentTime);
+      o.stop(a.currentTime+0.20);
+      mIdx++;
+      setTimeout(lp,220);
     }catch(e){}
-  }
-  // Small delay so AudioContext has time to be unlocked by user gesture
-  setTimeout(lp,100);
+  })();
 }
-function stopM(){mPlay=false;}
+
+function startM(lv){
+  stopM();
+  if(!mOn)return;
+  mPlay=true;mIdx=0;mLv=lv;
+  var a=getAC();
+  if(a.state==='running'){
+    _startMNow(lv);
+  } else {
+    // AC not running yet — queue it for next touch unlock
+    mPending=true;
+    a.resume().then(function(){
+      if(mPending&&mPlay){mPending=false;_startMNow(lv);}
+    }).catch(function(){
+      mPending=true; // will retry on next touch
+    });
+  }
+}
+function stopM(){mPlay=false;mPending=false;}
 
 // Input
 var keys={};
@@ -232,7 +269,7 @@ function clrK(){keys._jp=false;keys._ap=false;keys._tp=false;keys._pp=false;keys
 var isMob=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 function wireBtn(id,onDn,onUp){
   var el=document.getElementById(id);if(!el)return;
-  function dn(e){e.preventDefault();e.stopPropagation();el.classList.add('on');onDn();getAC();}
+  function dn(e){e.preventDefault();e.stopPropagation();el.classList.add('on');onDn();unlockAudio();}
   function up(e){e.preventDefault();e.stopPropagation();el.classList.remove('on');if(onUp)onUp();}
   el.addEventListener('touchstart',dn,{passive:false});el.addEventListener('touchend',up,{passive:false});el.addEventListener('touchcancel',up,{passive:false});
   el.addEventListener('mousedown',dn);el.addEventListener('mouseup',up);el.addEventListener('mouseleave',up);
@@ -242,14 +279,15 @@ wireBtn('bR',function(){touch.R=true;},function(){touch.R=false;});
 wireBtn('bJ',function(){keys._jp=true;},function(){});
 wireBtn('bA',function(){keys._ap=true;},function(){});
 
-cv.addEventListener('touchend',function(e){e.preventDefault();if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}},{passive:false});
+cv.addEventListener('touchend',function(e){e.preventDefault();unlockAudio();if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;}},{passive:false});
 cv.addEventListener('click',function(){if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}});
 
 var pbtn=document.getElementById('pbtn');
 function doPause(){getAC();if(gState===ST.P||gState===ST.B){pCur=0;gState=ST.PA;pbtn.textContent='PLAY';}else if(gState===ST.PA){gState=ST.P;pbtn.textContent='PAUSE';}}
-pbtn.addEventListener('click',doPause);pbtn.addEventListener('touchend',function(e){e.preventDefault();doPause();},{passive:false});
+pbtn.addEventListener('click',doPause);pbtn.addEventListener('touchend',function(e){e.preventDefault();unlockAudio();doPause();},{passive:false});
 
 cv.addEventListener('touchstart',function(e){
+  unlockAudio();
   if(gState!==ST.PA)return;e.preventDefault();
   var r=cv.getBoundingClientRect();
   Array.from(e.changedTouches).forEach(function(t){
