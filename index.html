@@ -87,8 +87,8 @@ html,body{background:#0a0a0a;overflow:hidden;height:100%;width:100%;touch-action
   </div>
 </div>
 <script>
-const GW=320,GH=420,GR=0.45,PS=3,JF=-10.5;
-const ST={T:0,P:1,PA:2,B:3,LT:4,GO:5,W:6};
+const GW=320,GH=420,GR=0.42,PS=3.2,JF=-10.5;
+const ST={T:0,P:1,PA:2,B:3,LT:4,GO:5,W:6,D:7}; // D=difficulty select
 const TRK=['KICKFLIP','HEELFLIP','360 FLIP','SHOVE-IT','VARIAL','NOSEGRIND','TAILSLIDE','IMPOSSIBLE'];
 const LV=[
   {bg:'#1a0800',mid:'#3d1a00',g:'#2a1000',sky:'#2d1000',acc:'#ff8c00',name:'SNEAKER FACTORY'},
@@ -106,6 +106,37 @@ let lastT=0,player,cam;
 var puTimer=10; // first powerup drop after 10s
 let parts=[],bgC=[],egT=0,egM=null,egL=0;
 var PMENU=['RESUME','MUSIC: ON','HOW TO PLAY','RESTART','QUIT TO TITLE'];
+var DIFF=1; // 0=baby 1=kid 2=adult — set on difficulty screen
+
+
+// ── DIFFICULTY CONFIG ──────────────────────────────────────
+function DC(){
+  // Returns config object for current DIFF
+  if(DIFF===0) return{// BABY
+    name:'BABY',col:'#88FF88',
+    plrHp:8,plrLives:5,plrHt:1.5,  // more HP, more lives, longer iframes
+    enHpM:0.5,enSpdM:0.6,           // enemies die in 1 hit, slow
+    bossHpM:0.5,bossSpdM:0.7,       // boss very manageable
+    puFreqM:0.5,                     // powerups twice as often
+    djFromLv:0                       // double jump from level 0
+  };
+  if(DIFF===2) return{// ADULT
+    name:'ADULT',col:'#FF6644',
+    plrHp:5,plrLives:3,plrHt:0.9,
+    enHpM:1.5,enSpdM:1.3,
+    bossHpM:1.5,bossSpdM:1.2,
+    puFreqM:1.4,
+    djFromLv:1
+  };
+  return{// KID (default)
+    name:'KID',col:'#88CCFF',
+    plrHp:5,plrLives:3,plrHt:0.9,
+    enHpM:1.0,enSpdM:1.0,
+    bossHpM:1.0,bossSpdM:1.0,
+    puFreqM:1.0,
+    djFromLv:1
+  };
+}
 
 // Tie-dye level-aware
 function tdMult(){const b=cLv||0,boss=gState===3?1.5:1;return([0.15,0.5,1.0][Math.min(b,2)])*boss;}
@@ -292,8 +323,33 @@ wireBtn('bR',function(){touch.R=true;},function(){touch.R=false;});
 wireBtn('bJ',function(){keys._jp=true;},function(){});
 wireBtn('bA',function(){keys._ap=true;},function(){});
 
-cv.addEventListener('touchend',function(e){e.preventDefault();unlockAudio();if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;}},{passive:false});
-cv.addEventListener('click',function(){if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}});
+cv.addEventListener('touchend',function(e){
+  e.preventDefault();unlockAudio();
+  if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;}
+  if(gState===ST.D){
+    var r=cv.getBoundingClientRect();
+    var t2=e.changedTouches[0];
+    var cy2=(t2.clientY-r.top)*(GH/r.height);
+    // Cards at y:86+mi*92, height 84
+    for(var mi=0;mi<3;mi++){
+      var cardY=86+mi*92;
+      if(cy2>=cardY&&cy2<=cardY+84){
+        DIFF=mi;pCur=mi;_startFromDiff();break;
+      }
+    }
+  }
+},{passive:false});
+cv.addEventListener('click',function(e){
+  if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}
+  if(gState===ST.D){
+    var r=cv.getBoundingClientRect();
+    var cy2=(e.clientY-r.top)*(GH/r.height);
+    for(var mi=0;mi<3;mi++){
+      var cardY=86+mi*92;
+      if(cy2>=cardY&&cy2<=cardY+84){DIFF=mi;pCur=mi;_startFromDiff();break;}
+    }
+  }
+});
 
 var pbtn=document.getElementById('pbtn');
 function doPause(){getAC();if(gState===ST.P||gState===ST.B){pCur=0;gState=ST.PA;pbtn.textContent='PLAY';}else if(gState===ST.PA){gState=ST.P;pbtn.textContent='PAUSE';}}
@@ -892,10 +948,43 @@ function drwBg(li,cx){
   else if(li===1){ctx.fillStyle='rgba(0,80,30,.2)';for(var i=0;i<5;i++){var tx=((i*110+cx*.18)%GW+GW)%GW-10;ctx.beginPath();ctx.moveTo(tx,GH-90);ctx.lineTo(tx-12,GH-60);ctx.lineTo(tx+12,GH-60);ctx.closePath();ctx.fill();}}
   else{ctx.fillStyle='rgba(20,60,200,.1)';for(var i=0;i<5;i++){var rx=((i*100+cx*.1)%GW+GW)%GW;ctx.beginPath();ctx.moveTo(rx-4,0);ctx.lineTo(rx+4,0);ctx.lineTo(rx+14,GH);ctx.lineTo(rx-14,GH);ctx.closePath();ctx.fill();}ctx.fillStyle='rgba(100,160,255,.4)';for(var i=0;i<16;i++){var sx=((i*80+cx*.04)%GW+GW)%GW;ctx.fillRect(sx,8+i*10,2,2);}}
   ctx.fillStyle=t.g||t.mid;ctx.fillRect(0,GH-30,GW,30);ctx.fillStyle=td(li*120,.4);ctx.fillRect(0,GH-30,GW,4);
-  // Draw pit warnings (dark gaps in ground strip)
+  // Draw pit danger zones — visible void below ground gaps
   if(lData&&lData.plat){
-    var segs=lData.plat.filter(function(p){return p.type==='g';});
-    // already drawn naturally since ground segments exist
+    var segs=lData.plat.filter(function(p){return p.type==='g';}).sort(function(a,b){return a.x-b.x;});
+    for(var pi=0;pi<segs.length-1;pi++){
+      var gapX=segs[pi].x+segs[pi].w;
+      var gapW=segs[pi+1].x-gapX;
+      // Relative to camera (cx is camX passed to drwBg)
+      var screenX=gapX-cx;
+      if(screenX+gapW<0||screenX>GW)continue;
+      // Lava/void glow — level-appropriate color
+      var voidCol=li===0?'#FF4400':li===1?'#4400FF':'#CC00FF';
+      // Deep void background
+      ctx.fillStyle='rgba(0,0,0,0.95)';
+      ctx.fillRect(screenX,GH-30,gapW,30);
+      // Animated glow from below
+      var glowY=GH-8+Math.sin(Date.now()*.003+pi)*4;
+      ctx.fillStyle=voidCol.replace(')',',0.6)').replace('rgb','rgba').replace('#','');
+      // Simple animated glow strips
+      ctx.globalAlpha=0.4+Math.sin(Date.now()*.004+pi)*0.2;
+      ctx.fillStyle=voidCol;
+      ctx.fillRect(screenX+2,GH-28,gapW-4,4);
+      ctx.globalAlpha=0.2+Math.sin(Date.now()*.006+pi+1)*0.15;
+      ctx.fillRect(screenX+4,GH-22,gapW-8,3);
+      ctx.globalAlpha=1;
+      // Warning stripes on edges of ground
+      ctx.fillStyle='#FF6600';
+      ctx.fillRect(screenX-4,GH-30,4,30);
+      ctx.fillRect(screenX+gapW,GH-30,4,30);
+      // Skull/danger marker at top of gap (only if gap is wide enough to show)
+      if(gapW>=30){
+        ctx.fillStyle='rgba(255,100,0,0.7)';
+        ctx.font='8px "Press Start 2P"';
+        ctx.textAlign='center';
+        ctx.fillText('!',screenX+gapW/2,GH-18);
+        ctx.textAlign='left';
+      }
+    }
   }
   bgC.forEach(function(c){drwCrit(c);});
   if(egM&&egL>0){ctx.globalAlpha=Math.min(1,egL)*.7;ctx.fillStyle=td(0,2);ctx.font='5px "Press Start 2P"';ctx.textAlign='center';ctx.fillText(egM,GW/2,GH/2-30);ctx.globalAlpha=1;}
@@ -904,356 +993,356 @@ function drwBg(li,cx){
 }
 
 function mkLv(i){
-  var GY=GH-30;
+  var GY=GH-30; // ground y=390
+  // Physics: JF=-10.5, GR=0.45, PS=3
+  // Single jump apex: ~123px, horiz dist: ~140px
+  // Pits must be ≤90px to cross from flat ground
 
   if(i===0){
-    // ══════════════════════════════════════
-    // LEVEL 0: SNEAKER FACTORY
-    // Intro — factory floors, conveyors, small pits, easy jumps
+    // ══════════════════════════════════════════
+    // LEVEL 0 — SNEAKER FACTORY
+    // Easy intro. Clear path. Small pits (30px).
+    // One main route + upper shortcut.
+    // No double jump yet.
     // Boss: THE KNOTTER at x=2400
-    // ══════════════════════════════════════
+    // ══════════════════════════════════════════
     var bX=2400,aW=380;
     return{w:bX+aW,bX:bX,arenaW:380,
     plat:[
-      // Ground with pits
-      {x:0,   y:GY,w:330,h:30,type:'g'},
-      {x:370, y:GY,w:310,h:30,type:'g'}, // pit 40px
-      {x:720, y:GY,w:300,h:30,type:'g'}, // pit 40px
-      {x:1060,y:GY,w:320,h:30,type:'g'}, // pit 40px
-      {x:1420,y:GY,w:300,h:30,type:'g'}, // pit 40px
-      {x:1760,y:GY,w:320,h:30,type:'g'}, // pit 40px
-      {x:2120,y:GY,w:280,h:30,type:'g'}, // approach
+      // Ground — 30px pits, very crossable
+      {x:0,   y:GY,w:400,h:30,type:'g'},
+      {x:430, y:GY,w:400,h:30,type:'g'}, // pit 30px
+      {x:860, y:GY,w:420,h:30,type:'g'}, // pit 30px
+      {x:1310,y:GY,w:420,h:30,type:'g'}, // pit 30px
+      {x:1760,y:GY,w:420,h:30,type:'g'}, // pit 30px
+      {x:2210,y:GY,w:190,h:30,type:'g'}, // approach
       {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
-      // ZONE 1 (0-720): Ground floor intro
-      {x:80,  y:355,w:80, h:12,type:'b'},
-      {x:220, y:340,w:75, h:12,type:'b'},
-      {x:320, y:325,w:65, h:12,type:'b'},  // bridge over pit
-      {x:430, y:340,w:80, h:12,type:'cv',d:1},
-      {x:565, y:355,w:80, h:12,type:'b'},
-      {x:670, y:340,w:65, h:12,type:'b'},  // bridge over pit
-      // Upper factory route
-      {x:120, y:295,w:80, h:12,type:'b'},
-      {x:260, y:278,w:75, h:12,type:'cv',d:-1},
-      {x:400, y:262,w:80, h:12,type:'b'},
-      {x:545, y:278,w:75, h:12,type:'b'},
-      {x:665, y:262,w:80, h:12,type:'b'},
+      // ── ZONE 1 (0-430): Factory intro ──
+      // Main route: low platforms, easy hops
+      {x:80,  y:362,w:90,h:12,type:'b'},
+      {x:240, y:350,w:90,h:12,type:'cv',d:1},
+      {x:380, y:362,w:80,h:12,type:'b'},  // right at pit edge
+      // Upper shortcut (optional)
+      {x:120, y:305,w:80,h:12,type:'b'},
+      {x:260, y:290,w:80,h:12,type:'b'},
+      {x:390, y:278,w:80,h:12,type:'b'},
 
-      // ZONE 2 (720-1060): Press room
-      {x:750, y:355,w:80, h:12,type:'b'},
-      {x:880, y:335,w:85, h:12,type:'cv',d:1},
-      {x:1010,y:318,w:65, h:12,type:'b'},
-      {x:1005,y:355,w:65, h:12,type:'b'},  // over pit
-      // Upper press catwalks
-      {x:760, y:295,w:80, h:12,type:'b'},
-      {x:900, y:272,w:85, h:12,type:'b'},
-      {x:1040,y:252,w:80, h:12,type:'b'},
-
-      // ZONE 3 (1060-1420): Assembly line
-      {x:1100,y:355,w:80, h:12,type:'b'},
-      {x:1220,y:335,w:90, h:12,type:'cv',d:-1},
-      {x:1360,y:318,w:75, h:12,type:'b'},
-      {x:1355,y:355,w:75, h:12,type:'b'},  // over pit
+      // ── ZONE 2 (430-860): Press room ──
+      {x:460, y:362,w:90,h:12,type:'b'},
+      {x:600, y:348,w:90,h:12,type:'cv',d:-1},
+      {x:740, y:362,w:80,h:12,type:'b'},
+      {x:840, y:362,w:50,h:12,type:'b'},  // pit edge
       // Upper
-      {x:1110,y:290,w:80, h:12,type:'b'},
-      {x:1250,y:268,w:85, h:12,type:'b'},
-      {x:1390,y:248,w:80, h:12,type:'b'},
+      {x:470, y:300,w:85,h:12,type:'b'},
+      {x:610, y:282,w:85,h:12,type:'b'},
+      {x:750, y:265,w:85,h:12,type:'b'},
 
-      // ZONE 4 (1420-1760): Loading bay
-      {x:1460,y:355,w:80, h:12,type:'b'},
-      {x:1580,y:338,w:85, h:12,type:'cv',d:1},
-      {x:1710,y:318,w:65, h:12,type:'b'},
-      {x:1705,y:355,w:65, h:12,type:'b'},  // over pit
+      // ── ZONE 3 (860-1310): Assembly line ──
+      {x:880, y:362,w:90,h:12,type:'b'},
+      {x:1020,y:348,w:95,h:12,type:'cv',d:1},
+      {x:1160,y:362,w:90,h:12,type:'b'},
+      {x:1270,y:362,w:60,h:12,type:'b'},  // pit edge
       // Upper
-      {x:1470,y:292,w:80, h:12,type:'b'},
-      {x:1610,y:272,w:80, h:12,type:'b'},
-      {x:1750,y:252,w:80, h:12,type:'b'},
+      {x:895, y:295,w:85,h:12,type:'b'},
+      {x:1040,y:275,w:85,h:12,type:'b'},
+      {x:1185,y:258,w:85,h:12,type:'b'},
 
-      // ZONE 5 (1760-2400): Final approach
-      {x:1800,y:355,w:80, h:12,type:'b'},
-      {x:1930,y:338,w:85, h:12,type:'b'},
-      {x:2060,y:318,w:80, h:12,type:'b'},
-      {x:2150,y:355,w:80, h:12,type:'b'},
-      {x:2270,y:335,w:85, h:12,type:'b'},
-      // High route
-      {x:1810,y:285,w:80, h:12,type:'b'},
-      {x:1950,y:262,w:80, h:12,type:'b'},
-      {x:2090,y:242,w:80, h:12,type:'b'},
-      {x:2230,y:258,w:80, h:12,type:'b'},
+      // ── ZONE 4 (1310-1760): Loading bay ──
+      {x:1330,y:362,w:90,h:12,type:'b'},
+      {x:1470,y:348,w:95,h:12,type:'cv',d:-1},
+      {x:1610,y:362,w:90,h:12,type:'b'},
+      {x:1720,y:362,w:60,h:12,type:'b'},  // pit edge
+      // Upper
+      {x:1345,y:292,w:85,h:12,type:'b'},
+      {x:1490,y:272,w:85,h:12,type:'b'},
+      {x:1635,y:252,w:85,h:12,type:'b'},
 
-      // Boss arena platforms (knot factory catwalks)
-      {x:bX+30, y:GY-52,w:65,h:12,type:'b'},
-      {x:bX+140,y:GY-88,w:65,h:12,type:'b'},
-      {x:bX+255,y:GY-52,w:65,h:12,type:'b'},
+      // ── ZONE 5 (1760-2400): Approach ──
+      {x:1780,y:362,w:90,h:12,type:'b'},
+      {x:1920,y:348,w:90,h:12,type:'b'},
+      {x:2060,y:362,w:90,h:12,type:'cv',d:1},
+      {x:2200,y:350,w:90,h:12,type:'b'},
+      // Upper approach
+      {x:1800,y:295,w:85,h:12,type:'b'},
+      {x:1940,y:275,w:85,h:12,type:'b'},
+      {x:2080,y:258,w:85,h:12,type:'b'},
+      {x:2220,y:242,w:85,h:12,type:'b'},
+
+      // ── BOSS ARENA: Knot Factory ──
+      // Flat main floor + 2 raised platforms for combat depth
+      {x:bX+60, y:GY-55,w:90,h:12,type:'b'},
+      {x:bX+220,y:GY-90,w:90,h:12,type:'b'},
+      {x:bX+310,y:GY-55,w:90,h:12,type:'b'},
     ],
     en:[
-      {t:'gs',x:200, y:GY-30},{t:'kl',x:430, y:GY-25},
-      {t:'gs',x:620, y:GY-30},{t:'kl',x:830, y:GY-25},
-      {t:'gs',x:1080,y:GY-30},{t:'kl',x:1280,y:GY-25},
-      {t:'gs',x:1500,y:GY-30},{t:'kl',x:1700,y:GY-25},
-      {t:'gs',x:1920,y:GY-30},{t:'kl',x:2180,y:GY-25},
+      {t:'gs',x:160, y:GY-30},{t:'kl',x:480, y:GY-25},
+      {t:'gs',x:720, y:GY-30},{t:'kl',x:950, y:GY-25},
+      {t:'gs',x:1200,y:GY-30},{t:'kl',x:1450,y:GY-25},
+      {t:'gs',x:1680,y:GY-30},{t:'kl',x:1900,y:GY-25},
+      {t:'gs',x:2100,y:GY-30},
     ],
     pk:[
-      {t:'h', x:100, y:GY-46},{t:'sp',x:420, y:GY-46},
-      {t:'h', x:680, y:GY-46},{t:'sh',x:950, y:GY-46},
-      {t:'h', x:1200,y:GY-46},{t:'bi',x:1480,y:GY-46},
-      {t:'h', x:1740,y:GY-46},{t:'sp',x:2000,y:GY-46},
-      {t:'h', x:2250,y:GY-46},
+      {t:'h', x:120, y:GY-46},{t:'sp',x:500, y:GY-46},
+      {t:'h', x:850, y:GY-46},{t:'sh',x:1200,y:GY-46},
+      {t:'h', x:1550,y:GY-46},{t:'bi',x:1850,y:GY-46},
+      {t:'h', x:2150,y:GY-46},
     ]};
   }
 
   if(i===1){
-    // ══════════════════════════════════════
-    // LEVEL 1: SKATE PARK
-    // Half-pipes, rails, bigger gaps, multi-height routing
+    // ══════════════════════════════════════════
+    // LEVEL 1 — SKATE PARK
+    // Medium difficulty. Pits 45px. Double jump unlocked.
+    // Rails, halfpipes, multi-route.
     // Boss: VELCRO VIKTOR at x=2700
-    // ══════════════════════════════════════
+    // ══════════════════════════════════════════
     var bX=2700,aW=440;
     return{w:bX+aW,bX:bX,arenaW:440,
     plat:[
-      // Ground with larger pits
-      {x:0,   y:GY,w:305,h:30,type:'g'},
-      {x:360, y:GY,w:285,h:30,type:'g'}, // pit 55px
-      {x:700, y:GY,w:285,h:30,type:'g'}, // pit 55px
-      {x:1040,y:GY,w:305,h:30,type:'g'}, // pit 55px
-      {x:1400,y:GY,w:285,h:30,type:'g'}, // pit 55px
-      {x:1740,y:GY,w:305,h:30,type:'g'}, // pit 55px
-      {x:2100,y:GY,w:305,h:30,type:'g'}, // pit 55px
-      {x:2460,y:GY,w:240,h:30,type:'g'}, // approach
+      // Ground — 45px pits
+      {x:0,   y:GY,w:380,h:30,type:'g'},
+      {x:425, y:GY,w:380,h:30,type:'g'}, // pit 45px
+      {x:850, y:GY,w:380,h:30,type:'g'}, // pit 45px
+      {x:1275,y:GY,w:380,h:30,type:'g'}, // pit 45px
+      {x:1700,y:GY,w:380,h:30,type:'g'}, // pit 45px
+      {x:2125,y:GY,w:380,h:30,type:'g'}, // pit 45px
+      {x:2550,y:GY,w:150,h:30,type:'g'}, // approach
       {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
-      // ZONE 1 (0-700): Skate plaza
-      // Low route — hop over small pit
-      {x:70,  y:355,w:80, h:12,type:'pp'},
-      {x:210, y:340,w:75, h:12,type:'rl'},
-      {x:315, y:322,w:60, h:12,type:'pp'},  // over pit
-      {x:415, y:340,w:80, h:12,type:'rl'},
-      {x:555, y:355,w:75, h:12,type:'pp'},
-      {x:660, y:335,w:55, h:12,type:'pp'},  // over pit
+      // ── ZONE 1 (0-425): Skate plaza ──
+      {x:70,  y:358,w:90,h:12,type:'pp'},
+      {x:215, y:342,w:90,h:12,type:'rl'},
+      {x:355, y:358,w:80,h:12,type:'pp'},
+      {x:405, y:358,w:50,h:12,type:'pp'}, // pit edge
       // Mid route
-      {x:90,  y:305,w:80, h:12,type:'pp'},
-      {x:235, y:288,w:80, h:12,type:'rl'},
-      {x:385, y:272,w:85, h:12,type:'pp'},
-      {x:535, y:288,w:80, h:12,type:'rl'},
-      {x:680, y:272,w:70, h:12,type:'pp'},
-      // High halfpipe route
-      {x:150, y:245,w:80, h:12,type:'pp'},
-      {x:310, y:228,w:80, h:12,type:'pp'},
-      {x:470, y:212,w:80, h:12,type:'pp'},
-      {x:630, y:228,w:80, h:12,type:'pp'},
+      {x:85,  y:302,w:85,h:12,type:'pp'},
+      {x:230, y:282,w:85,h:12,type:'rl'},
+      {x:375, y:262,w:85,h:12,type:'pp'},
+      // High halfpipe
+      {x:155, y:235,w:80,h:12,type:'pp'},
+      {x:300, y:215,w:80,h:12,type:'pp'},
 
-      // ZONE 2 (700-1040): Rail section
-      {x:740, y:355,w:80, h:12,type:'rl'},
-      {x:870, y:335,w:90, h:12,type:'rl'},
-      {x:1000,y:315,w:60, h:12,type:'rl'},
-      {x:990, y:355,w:60, h:12,type:'pp'},  // over pit
-      // Upper rails
-      {x:730, y:295,w:80, h:12,type:'rl'},
-      {x:870, y:272,w:90, h:12,type:'rl'},
-      {x:1010,y:252,w:80, h:12,type:'rl'},
+      // ── ZONE 2 (425-850): Rail section ──
+      {x:440, y:358,w:90,h:12,type:'rl'},
+      {x:580, y:342,w:90,h:12,type:'rl'},
+      {x:720, y:358,w:85,h:12,type:'pp'},
+      {x:810, y:358,w:65,h:12,type:'pp'}, // pit edge
+      // Mid rails
+      {x:450, y:298,w:85,h:12,type:'rl'},
+      {x:595, y:278,w:85,h:12,type:'rl'},
+      {x:740, y:258,w:85,h:12,type:'rl'},
+      // High perch
+      {x:530, y:228,w:85,h:12,type:'pp'},
+      {x:670, y:208,w:85,h:12,type:'pp'},
 
-      // ZONE 3 (1040-1400): Big air section
-      {x:1090,y:355,w:75, h:12,type:'pp'},
-      {x:1205,y:332,w:80, h:12,type:'pp'},
-      {x:1340,y:312,w:75, h:12,type:'pp'},
-      {x:1350,y:355,w:65, h:12,type:'pp'},  // over pit
-      // Upper — bigger vertical range
-      {x:1080,y:292,w:75, h:12,type:'rl'},
-      {x:1200,y:268,w:80, h:12,type:'pp'},
-      {x:1335,y:245,w:75, h:12,type:'rl'},
-      // Very high perch
-      {x:1165,y:215,w:80, h:12,type:'pp'},
+      // ── ZONE 3 (850-1275): Big air ──
+      {x:860, y:358,w:90,h:12,type:'pp'},
+      {x:1000,y:340,w:90,h:12,type:'rl'},
+      {x:1140,y:358,w:85,h:12,type:'pp'},
+      {x:1230,y:358,w:65,h:12,type:'pp'}, // pit edge
+      // Mid
+      {x:870, y:295,w:85,h:12,type:'pp'},
+      {x:1010,y:272,w:85,h:12,type:'rl'},
+      {x:1150,y:250,w:85,h:12,type:'pp'},
+      // Sky
+      {x:945, y:215,w:85,h:12,type:'pp'},
+      {x:1090,y:192,w:85,h:12,type:'rl'},
 
-      // ZONE 4 (1400-1740): Halfpipe valley
-      {x:1450,y:355,w:80, h:12,type:'rl'},
-      {x:1570,y:335,w:85, h:12,type:'pp'},
-      {x:1695,y:315,w:65, h:12,type:'rl'},
-      {x:1688,y:355,w:65, h:12,type:'pp'},  // over pit
-      {x:1470,y:292,w:80, h:12,type:'rl'},
-      {x:1605,y:268,w:85, h:12,type:'pp'},
-      {x:1740,y:245,w:80, h:12,type:'rl'},
+      // ── ZONE 4 (1275-1700): Halfpipe valley ──
+      {x:1285,y:358,w:90,h:12,type:'rl'},
+      {x:1425,y:342,w:90,h:12,type:'pp'},
+      {x:1565,y:358,w:85,h:12,type:'rl'},
+      {x:1655,y:358,w:65,h:12,type:'rl'}, // pit edge
+      // Mid
+      {x:1295,y:298,w:85,h:12,type:'rl'},
+      {x:1440,y:275,w:85,h:12,type:'pp'},
+      {x:1585,y:252,w:85,h:12,type:'rl'},
+      // Sky
+      {x:1380,y:218,w:85,h:12,type:'pp'},
+      {x:1525,y:195,w:85,h:12,type:'rl'},
 
-      // ZONE 5 (1740-2100): Trick zone
-      {x:1790,y:355,w:80, h:12,type:'pp'},
-      {x:1910,y:335,w:85, h:12,type:'rl'},
-      {x:2050,y:315,w:70, h:12,type:'pp'},
-      {x:2045,y:355,w:70, h:12,type:'pp'},  // over pit
-      {x:1800,y:288,w:80, h:12,type:'rl'},
-      {x:1940,y:265,w:85, h:12,type:'pp'},
-      {x:2080,y:242,w:80, h:12,type:'rl'},
-      {x:2010,y:212,w:80, h:12,type:'pp'},
+      // ── ZONE 5 (1700-2125): Trick zone ──
+      {x:1710,y:358,w:90,h:12,type:'pp'},
+      {x:1850,y:342,w:90,h:12,type:'rl'},
+      {x:1990,y:358,w:85,h:12,type:'pp'},
+      {x:2080,y:358,w:65,h:12,type:'rl'}, // pit edge
+      // Mid
+      {x:1720,y:298,w:85,h:12,type:'rl'},
+      {x:1865,y:275,w:85,h:12,type:'pp'},
+      {x:2010,y:252,w:85,h:12,type:'rl'},
 
-      // ZONE 6 (2100-2700): Final skate run
-      {x:2160,y:355,w:80, h:12,type:'pp'},
-      {x:2280,y:335,w:85, h:12,type:'rl'},
-      {x:2400,y:312,w:80, h:12,type:'pp'},
+      // ── ZONE 6 (2125-2700): Final run ──
+      {x:2135,y:358,w:90,h:12,type:'pp'},
+      {x:2280,y:342,w:90,h:12,type:'rl'},
+      {x:2420,y:362,w:80,h:12,type:'pp'},
+      {x:2555,y:350,w:80,h:12,type:'rl'},
       // High run
-      {x:2175,y:285,w:80, h:12,type:'rl'},
-      {x:2308,y:262,w:85, h:12,type:'pp'},
-      {x:2448,y:242,w:80, h:12,type:'rl'},
+      {x:2145,y:295,w:85,h:12,type:'rl'},
+      {x:2290,y:272,w:85,h:12,type:'pp'},
+      {x:2435,y:252,w:85,h:12,type:'rl'},
 
-      // Boss arena platforms (velcro citadel tiers)
-      {x:bX+25, y:GY-65, w:75,h:12,type:'pp'},
-      {x:bX+148,y:GY-110,w:75,h:12,type:'rl'},
-      {x:bX+272,y:GY-65, w:75,h:12,type:'pp'},
-      {x:bX+90, y:GY-42, w:55,h:12,type:'rl'},
-      {x:bX+220,y:GY-42, w:55,h:12,type:'rl'},
+      // ── BOSS ARENA: Velcro Citadel ──
+      // Flat floor + 3 platforms for tactical combat
+      {x:bX+40, y:GY-60, w:90,h:12,type:'pp'},
+      {x:bX+175,y:GY-100,w:90,h:12,type:'rl'},
+      {x:bX+310,y:GY-60, w:90,h:12,type:'pp'},
     ],
     en:[
-      {t:'sg',x:180, y:GY-30},{t:'db',x:440, y:GY-34},
-      {t:'lh',x:680, y:GY-28},{t:'sg',x:880, y:GY-30},
-      {t:'db',x:1120,y:GY-34},{t:'lh',x:1360,y:GY-28},
-      {t:'sg',x:1590,y:GY-30},{t:'db',x:1820,y:GY-34},
-      {t:'lh',x:2060,y:GY-28},{t:'sg',x:2300,y:GY-30},
-      {t:'lh',x:2500,y:GY-28},
+      {t:'sg',x:170, y:GY-28},{t:'db',x:480, y:GY-34},
+      {t:'lh',x:720, y:GY-28},{t:'sg',x:970, y:GY-28},
+      {t:'db',x:1220,y:GY-34},{t:'lh',x:1480,y:GY-28},
+      {t:'sg',x:1730,y:GY-28},{t:'db',x:1980,y:GY-34},
+      {t:'lh',x:2230,y:GY-28},{t:'sg',x:2480,y:GY-28},
     ],
     pk:[
-      {t:'h', x:100, y:GY-46},{t:'sp',x:370, y:GY-46},
-      {t:'h', x:640, y:GY-46},{t:'sh',x:900, y:GY-46},
-      {t:'bi',x:1160,y:GY-46},{t:'h', x:1430,y:GY-46},
-      {t:'sp',x:1690,y:GY-46},{t:'h', x:1960,y:GY-46},
-      {t:'sh',x:2220,y:GY-46},{t:'h', x:2490,y:GY-46},
+      {t:'h', x:100, y:GY-46},{t:'sp',x:460, y:GY-46},
+      {t:'sh',x:820, y:GY-46},{t:'h', x:1180,y:GY-46},
+      {t:'bi',x:1540,y:GY-46},{t:'sp',x:1860,y:GY-46},
+      {t:'h', x:2200,y:GY-46},{t:'sh',x:2530,y:GY-46},
     ]};
   }
 
-  // ══════════════════════════════════════
-  // LEVEL 2: HALL OF FAME
-  // Floating islands, huge gaps, precision platforming
-  // Multi-tier vertical design, requires mastery
+  // ══════════════════════════════════════════
+  // LEVEL 2 — HALL OF FAME
+  // Hard but fair. Pits 60px. Floating islands.
+  // CLEAR routes, every jump achievable.
   // Boss: UN-LACED KING at x=3000
-  // ══════════════════════════════════════
+  // Arena is a dramatic multi-tier battle stage.
+  // ══════════════════════════════════════════
+  // LEVEL 2 — HALL OF FAME
+  // Challenging through enemies + boss, NOT brutal jumps.
+  // 40px pits (same as lv0). Three clear routes.
+  // Max height 145px above ground. Wide platforms.
+  // Boss: UN-LACED KING at x=3000
+  // ══════════════════════════════════════════
   var bX=3000,aW=520;
   return{w:bX+aW,bX:bX,arenaW:520,
   plat:[
-    // Ground — smallest segments, biggest pits
-    {x:0,   y:GY,w:260,h:30,type:'g'},
-    {x:330, y:GY,w:230,h:30,type:'g'}, // pit 70px
-    {x:630, y:GY,w:230,h:30,type:'g'}, // pit 70px
-    {x:930, y:GY,w:250,h:30,type:'g'}, // pit 70px
-    {x:1250,y:GY,w:230,h:30,type:'g'}, // pit 70px
-    {x:1550,y:GY,w:250,h:30,type:'g'}, // pit 70px
-    {x:1870,y:GY,w:230,h:30,type:'g'}, // pit 70px
-    {x:2170,y:GY,w:250,h:30,type:'g'}, // pit 70px
-    {x:2490,y:GY,w:240,h:30,type:'g'}, // approach
+    // Ground — 40px pits, always crossable
+    {x:0,   y:GY,w:380,h:30,type:'g'},
+    {x:420, y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:840, y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:1260,y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:1680,y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:2100,y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:2520,y:GY,w:380,h:30,type:'g'}, // pit 40px
+    {x:2960,y:GY,w:40, h:30,type:'g'}, // approach step
     {x:bX,  y:GY,w:aW, h:30,type:'g'}, // boss arena
 
-    // ZONE 1 (0-650): Temple entrance
-    {x:60,  y:352,w:75, h:12,type:'fl'},
-    {x:185, y:332,w:70, h:12,type:'fl'},
-    {x:285, y:310,w:60, h:12,type:'fl'},  // over pit
-    {x:385, y:332,w:75, h:12,type:'fl'},
-    {x:510, y:312,w:70, h:12,type:'fl'},
-    {x:605, y:292,w:60, h:12,type:'fl'},  // over pit
-    // Mid
-    {x:80,  y:298,w:75, h:12,type:'fl'},
-    {x:215, y:275,w:70, h:12,type:'cv',d:1},
-    {x:365, y:258,w:75, h:12,type:'fl'},
-    {x:510, y:240,w:70, h:12,type:'fl'},
-    // High
-    {x:140, y:242,w:70, h:12,type:'fl'},
-    {x:295, y:222,w:70, h:12,type:'fl'},
-    {x:455, y:205,w:70, h:12,type:'fl'},
-    // Very high
-    {x:220, y:178,w:70, h:12,type:'fl'},
-    {x:385, y:162,w:70, h:12,type:'fl'},
+    // ── ZONE 1 (0-420): Temple gates ──
+    {x:55,  y:362,w:95,h:12,type:'fl'},
+    {x:200, y:352,w:95,h:12,type:'fl'},
+    {x:340, y:362,w:95,h:12,type:'fl'},
+    {x:375, y:362,w:65,h:12,type:'fl'}, // pit bridge
+    {x:70,  y:310,w:90,h:12,type:'fl'},
+    {x:215, y:295,w:90,h:12,type:'cv',d:1},
+    {x:360, y:310,w:90,h:12,type:'fl'},
+    {x:140, y:255,w:85,h:12,type:'fl'},
+    {x:290, y:245,w:85,h:12,type:'fl'},
 
-    // ZONE 2 (650-1000): Rising columns
-    {x:670, y:352,w:70, h:12,type:'fl'},
-    {x:785, y:328,w:70, h:12,type:'fl'},
-    {x:895, y:305,w:60, h:12,type:'fl'},
-    {x:890, y:352,w:55, h:12,type:'fl'},  // over pit
-    {x:680, y:292,w:70, h:12,type:'cv',d:-1},
-    {x:810, y:268,w:75, h:12,type:'fl'},
-    {x:950, y:248,w:70, h:12,type:'fl'},
-    // Column tops
-    {x:730, y:228,w:70, h:12,type:'fl'},
-    {x:880, y:208,w:70, h:12,type:'fl'},
-    {x:810, y:175,w:70, h:12,type:'fl'},
+    // ── ZONE 2 (420-840): Rising columns ──
+    {x:430, y:362,w:95,h:12,type:'fl'},
+    {x:575, y:352,w:95,h:12,type:'fl'},
+    {x:715, y:362,w:95,h:12,type:'fl'},
+    {x:798, y:362,w:62,h:12,type:'fl'}, // pit bridge
+    {x:440, y:308,w:90,h:12,type:'fl'},
+    {x:588, y:292,w:90,h:12,type:'fl'},
+    {x:728, y:308,w:90,h:12,type:'fl'},
+    {x:510, y:252,w:85,h:12,type:'fl'},
+    {x:658, y:248,w:85,h:12,type:'fl'},
 
-    // ZONE 3 (1000-1400): Floating islands
-    {x:1000,y:348,w:70, h:12,type:'fl'},
-    {x:1110,y:322,w:70, h:12,type:'fl'},
-    {x:1210,y:298,w:60, h:12,type:'fl'},
-    {x:1200,y:348,w:60, h:12,type:'fl'},  // over pit
-    {x:1320,y:328,w:70, h:12,type:'fl'},
-    {x:1020,y:285,w:70, h:12,type:'fl'},
-    {x:1140,y:262,w:75, h:12,type:'cv',d:1},
-    {x:1275,y:242,w:70, h:12,type:'fl'},
-    // Upper islands
-    {x:1060,y:225,w:70, h:12,type:'fl'},
-    {x:1195,y:205,w:70, h:12,type:'fl'},
-    {x:1330,y:188,w:70, h:12,type:'fl'},
-    // Peak island
-    {x:1195,y:162,w:70, h:12,type:'fl'},
+    // ── ZONE 3 (840-1260): Floating islands ──
+    {x:850, y:362,w:95,h:12,type:'fl'},
+    {x:995, y:350,w:95,h:12,type:'fl'},
+    {x:1135,y:362,w:95,h:12,type:'fl'},
+    {x:1218,y:362,w:62,h:12,type:'fl'}, // pit bridge
+    {x:860, y:305,w:90,h:12,type:'fl'},
+    {x:1005,y:288,w:90,h:12,type:'cv',d:-1},
+    {x:1145,y:305,w:90,h:12,type:'fl'},
+    {x:932, y:250,w:85,h:12,type:'fl'},
+    {x:1080,y:248,w:85,h:12,type:'fl'},
 
-    // ZONE 4 (1400-1700): The gauntlet
-    {x:1410,y:348,w:68, h:12,type:'fl'},
-    {x:1522,y:322,w:68, h:12,type:'fl'},
-    {x:1500,y:348,w:60, h:12,type:'fl'},  // over pit
-    {x:1430,y:292,w:68, h:12,type:'cv',d:-1},
-    {x:1548,y:268,w:68, h:12,type:'fl'},
-    {x:1668,y:248,w:68, h:12,type:'fl'},
-    {x:1468,y:228,w:68, h:12,type:'fl'},
-    {x:1588,y:205,w:68, h:12,type:'fl'},
-    {x:1528,y:175,w:68, h:12,type:'fl'},
+    // ── ZONE 4 (1260-1680): The gauntlet ──
+    {x:1270,y:362,w:95,h:12,type:'fl'},
+    {x:1415,y:350,w:95,h:12,type:'fl'},
+    {x:1555,y:362,w:95,h:12,type:'fl'},
+    {x:1638,y:362,w:62,h:12,type:'fl'}, // pit bridge
+    {x:1280,y:305,w:90,h:12,type:'fl'},
+    {x:1428,y:288,w:90,h:12,type:'cv',d:1},
+    {x:1565,y:305,w:90,h:12,type:'fl'},
+    {x:1352,y:250,w:85,h:12,type:'fl'},
+    {x:1500,y:248,w:85,h:12,type:'fl'},
 
-    // ZONE 5 (1700-2100): Sky bridge
-    {x:1760,y:345,w:70, h:12,type:'fl'},
-    {x:1875,y:322,w:70, h:12,type:'fl'},
-    {x:1825,y:348,w:60, h:12,type:'fl'},  // over pit
-    {x:2000,y:325,w:70, h:12,type:'fl'},
-    {x:2110,y:302,w:65, h:12,type:'fl'},
-    {x:2065,y:348,w:65, h:12,type:'fl'},  // over pit
-    {x:1780,y:288,w:70, h:12,type:'fl'},
-    {x:1910,y:265,w:70, h:12,type:'fl'},
-    {x:2050,y:245,w:70, h:12,type:'fl'},
-    {x:1860,y:225,w:70, h:12,type:'fl'},
-    {x:1990,y:205,w:70, h:12,type:'fl'},
-    {x:1930,y:178,w:70, h:12,type:'fl'},
+    // ── ZONE 5 (1680-2100): Sky bridge ──
+    {x:1690,y:362,w:95,h:12,type:'fl'},
+    {x:1835,y:350,w:95,h:12,type:'fl'},
+    {x:1975,y:362,w:95,h:12,type:'fl'},
+    {x:2058,y:362,w:62,h:12,type:'fl'}, // pit bridge
+    {x:1700,y:305,w:90,h:12,type:'fl'},
+    {x:1848,y:288,w:90,h:12,type:'fl'},
+    {x:1988,y:305,w:90,h:12,type:'fl'},
+    {x:1775,y:252,w:85,h:12,type:'fl'},
+    {x:1925,y:248,w:85,h:12,type:'fl'},
 
-    // ZONE 6 (2100-3000): Final ascent
-    {x:2200,y:345,w:70, h:12,type:'fl'},
-    {x:2318,y:322,w:70, h:12,type:'fl'},
-    {x:2440,y:300,w:70, h:12,type:'fl'},
-    {x:2220,y:288,w:70, h:12,type:'cv',d:1},
-    {x:2352,y:265,w:70, h:12,type:'fl'},
-    {x:2485,y:245,w:70, h:12,type:'fl'},
-    {x:2270,y:228,w:70, h:12,type:'fl'},
-    {x:2408,y:208,w:70, h:12,type:'fl'},
-    {x:2550,y:188,w:70, h:12,type:'fl'},
-    {x:2350,y:178,w:70, h:12,type:'fl'},
-    {x:2490,y:158,w:70, h:12,type:'fl'},
+    // ── ZONE 6 (2100-3000): Final approach ──
+    {x:2110,y:362,w:95,h:12,type:'fl'},
+    {x:2258,y:350,w:95,h:12,type:'fl'},
+    {x:2400,y:362,w:95,h:12,type:'fl'},
+    {x:2540,y:350,w:95,h:12,type:'fl'},
+    {x:2680,y:362,w:95,h:12,type:'fl'},
+    {x:2820,y:352,w:95,h:12,type:'fl'},
+    {x:2918,y:362,w:62,h:12,type:'fl'}, // approach bridge
+    {x:2120,y:305,w:90,h:12,type:'fl'},
+    {x:2268,y:288,w:90,h:12,type:'cv',d:-1},
+    {x:2412,y:305,w:90,h:12,type:'fl'},
+    {x:2555,y:288,w:90,h:12,type:'fl'},
+    {x:2698,y:305,w:90,h:12,type:'fl'},
+    {x:2195,y:250,w:85,h:12,type:'fl'},
+    {x:2345,y:248,w:85,h:12,type:'fl'},
+    {x:2495,y:250,w:85,h:12,type:'fl'},
+    {x:2648,y:248,w:85,h:12,type:'fl'},
 
-    // Boss arena (Un-Laced King's Dark Palace tiers)
-    {x:bX+18, y:GY-78, w:75,h:12,type:'fl'},
-    {x:bX+138,y:GY-130,w:75,h:12,type:'fl'},
-    {x:bX+262,y:GY-175,w:80,h:12,type:'fl'},
-    {x:bX+388,y:GY-130,w:75,h:12,type:'fl'},
-    {x:bX+55, y:GY-48, w:55,h:12,type:'cv',d:1},
-    {x:bX+200,y:GY-48, w:55,h:12,type:'cv',d:-1},
-    {x:bX+348,y:GY-48, w:55,h:12,type:'cv',d:1},
+    // ── BOSS ARENA: UN-LACED KING'S DARK PALACE ──
+    // Three wide platforms, nothing extreme.
+    {x:bX+30, y:GY-72, w:110,h:12,type:'fl'},
+    {x:bX+205,y:GY-100,w:110,h:12,type:'fl'},
+    {x:bX+380,y:GY-72, w:110,h:12,type:'fl'},
   ],
   en:[
-    {t:'lh',x:200, y:GY-28},{t:'wz',x:430, y:GY-32},
-    {t:'db',x:640, y:GY-34},{t:'lh',x:870, y:GY-28},
-    {t:'wz',x:1080,y:GY-32},{t:'db',x:1310,y:GY-34},
-    {t:'lh',x:1530,y:GY-28},{t:'wz',x:1760,y:GY-32},
-    {t:'db',x:1990,y:GY-34},{t:'lh',x:2220,y:GY-28},
-    {t:'wz',x:2450,y:GY-32},{t:'lh',x:2700,y:GY-28},
+    {t:'lh',x:180, y:GY-28},{t:'wz',x:490, y:GY-32},
+    {t:'db',x:800, y:GY-34},{t:'lh',x:1110,y:GY-28},
+    {t:'wz',x:1420,y:GY-32},{t:'db',x:1730,y:GY-34},
+    {t:'lh',x:2040,y:GY-28},{t:'wz',x:2350,y:GY-32},
+    {t:'db',x:2660,y:GY-34},{t:'lh',x:2880,y:GY-28},
   ],
   pk:[
-    {t:'h', x:80,  y:GY-46},{t:'sh',x:350, y:GY-46},
-    {t:'h', x:600, y:GY-46},{t:'bi',x:880, y:GY-46},
-    {t:'h', x:1120,y:GY-46},{t:'sp',x:1380,y:GY-46},
-    {t:'h', x:1620,y:GY-46},{t:'sh',x:1890,y:GY-46},
-    {t:'h', x:2140,y:GY-46},{t:'bi',x:2410,y:GY-46},
-    {t:'h', x:2680,y:GY-46},
+    {t:'h', x:80,  y:GY-46},{t:'sh',x:460, y:GY-46},
+    {t:'h', x:840, y:GY-46},{t:'bi',x:1220,y:GY-46},
+    {t:'h', x:1600,y:GY-46},{t:'sp',x:1940,y:GY-46},
+    {t:'h', x:2280,y:GY-46},{t:'sh',x:2620,y:GY-46},
+    {t:'bi',x:2900,y:GY-46},{t:'h', x:bX+260,y:GY-46},
   ]};
 }
 
 function drwPlat(plats){
   plats.forEach(function(p){
-    if(p.type==='g')return;
+    if(p.type==='g'){
+      // Draw ground with level texture
+      ctx.fillStyle=cLv===0?'#2A1A0A':cLv===1?'#0A1A0A':'#080818';
+      ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle=cLv===0?'#4A3020':cLv===1?'#1A4020':'#101030';
+      ctx.fillRect(p.x,p.y,p.w,3);
+      // Ground detail
+      if(cLv===0){
+        ctx.fillStyle='rgba(255,140,0,0.15)';
+        for(var gi=0;gi<p.w;gi+=24)ctx.fillRect(p.x+gi,p.y+3,20,2);
+      } else if(cLv===1){
+        ctx.fillStyle='rgba(0,255,100,0.1)';
+        ctx.fillRect(p.x,p.y+3,p.w,2);
+      }
+      return;
+    }
     if(p.type==='cv'){ctx.fillStyle='#B0BEC5';ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle=td(0,.8);var o=(Date.now()*.02*p.d)%16;for(var i=-1;i<p.w/16+1;i++)ctx.fillRect(p.x+i*16+o%16,p.y,8,3);}
     else if(p.type==='rl'){ctx.fillStyle='#78909C';ctx.fillRect(p.x,p.y+4,p.w,5);ctx.fillStyle='#ECEFF1';ctx.fillRect(p.x,p.y,p.w,3);for(var i=0;i<p.w;i+=10){ctx.fillStyle='#5D4037';ctx.fillRect(p.x+i,p.y+2,4,8);}}
     else if(p.type==='fl'){ctx.fillStyle=tda(p.x*.4,.6,.85);ctx.fillRect(p.x,p.y,p.w,p.h);ctx.fillStyle=td(p.x*.4,.6);ctx.fillRect(p.x,p.y,p.w,2);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(p.x+2,p.y+2,p.w-4,p.h-4);}
@@ -1298,7 +1387,7 @@ Player.prototype.upd=function(dt,plats){
   this.aT+=dt;if(this.aT>.1){this.af=(this.af+1)%4;this.aT=0;}
 };
 Player.prototype.doTrick=function(){var t=TRK[Math.floor(Math.random()*TRK.length)];this.tT=.5;this.tCool=.3;spTx(this.x+this.w/2,this.y-8,t);this.gB?SFX.gtrick():SFX.trick();gScore+=this.gB?150:50;spP(this.x+this.w/2,this.y+this.h/2,td(Math.random()*360,1),5,1.5);};
-Player.prototype.dmg=function(a){if(this.ht>0||this.shieldT>0)return;this.hp-=a;this.ht=.9;SFX.hit();if(this.hp<=0){this.lives--;if(this.lives>0){this.hp=5;this.x=40;this.y=GH-80;this.vy=0;}}};
+Player.prototype.dmg=function(a){if(this.ht>0||this.shieldT>0)return;this.hp-=a;this.ht=DC().plrHt;SFX.hit();if(this.hp<=0){this.lives--;if(this.lives>0){this.hp=5;this.x=40;this.y=GH-80;this.vy=0;}}};
 Player.prototype.ab=function(){if(!this.atk)return null;var aw=this.bigAtk>0?72:52;return{x:this.fr?this.x+this.w:this.x-aw,y:this.y,w:aw,h:this.h+4};};
 Player.prototype.drw=function(){
   var x=this.x,y=this.y,f=this.af,self=this;
@@ -2375,12 +2464,106 @@ function drwHUD(pl){
   else if(pl.bigAtk>0){ctx.fillStyle='#FF8800';ctx.font='5px "Press Start 2P"';ctx.textAlign='right';ctx.fillText('⚔POWER '+Math.ceil(pl.bigAtk)+'s',px2,py2+8);}
   else if(pl.wt>0){ctx.fillStyle='#44CC44';ctx.font='5px "Press Start 2P"';ctx.textAlign='right';ctx.fillText('⚡SPEED '+Math.ceil(pl.wt)+'s',px2,py2+8);}
   if(!pl.og&&pl.hB&&pl.jl>0){ctx.fillStyle=tda(200,2,.55);ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('2x JUMP = TRICK!',GW/2,GH-38);}
+  // Difficulty badge top-right corner (subtle)
+  var dc2=DC();
+  ctx.fillStyle=dc2.col+'99';ctx.font='4px "Press Start 2P"';ctx.textAlign='right';
+  ctx.fillText(dc2.name,GW-4,10);
   ctx.textAlign='left';
   updateHUD();
 }
 function drwScan(){ctx.fillStyle='rgba(0,0,0,.06)';for(var sy=0;sy<GH;sy+=3)ctx.fillRect(0,sy,GW,1);}
 
 // Screens
+
+function drwDiff(){
+  ctx.fillStyle='#000';ctx.fillRect(0,0,GW,GH);drwScan();
+  ctx.fillStyle='rgba(255,255,255,.04)';
+  for(var i=0;i<20;i++)ctx.fillRect((i*83+Math.floor(ttT*.5))%GW,(i*61)%GH,1+(i%3),1);
+  bgC.forEach(function(c){drwCrit(c);});
+
+  ctx.textAlign='center';
+
+  // Title
+  ctx.fillStyle=tdg(GW/2-55,28,GW/2+55,28,0,1.5);
+  ctx.font='8px "Press Start 2P"';ctx.fillText('SELECT',GW/2,34);
+  ctx.fillStyle=tdg(GW/2-65,50,GW/2+65,50,120,1.5);
+  ctx.fillText('DIFFICULTY',GW/2,56);
+
+  ctx.fillStyle='#555';ctx.font='4px "Press Start 2P"';
+  ctx.fillText('TAP A MODE TO START',GW/2,72);
+
+  var modes=[
+    {key:0,name:'BABY',icon:'★★★',col:'#88FF88',dark:'#1a3a1a',
+     lines:['More HP & lives','Enemies die fast','Bosses are gentle','Double jump from lv1']},
+    {key:1,name:'KID',icon:'★★',col:'#88CCFF',dark:'#1a2a3a',
+     lines:['Standard HP','Normal enemies','Fair bosses','Double jump lv2']},
+    {key:2,name:'ADULT',icon:'★',col:'#FF6644',dark:'#3a1a1a',
+     lines:['Standard HP','Tough enemies','Hard bosses','Double jump lv2']},
+  ];
+
+  modes.forEach(function(m,mi){
+    var sel=DIFF===m.key;
+    var bx=8,bw=GW-16;
+    var by=86+mi*92,bh=84;
+
+    // Card background
+    ctx.fillStyle=sel?m.dark:'rgba(0,0,0,0.6)';
+    ctx.fillRect(bx,by,bw,bh);
+
+    // Border — thicker + glowing when selected
+    ctx.strokeStyle=m.col;
+    ctx.lineWidth=sel?3:1;
+    ctx.globalAlpha=sel?1:0.45;
+    ctx.strokeRect(bx,by,bw,bh);
+    ctx.globalAlpha=1;
+
+    // Selection glow
+    if(sel){
+      ctx.fillStyle=m.col.replace(')',',0.08)').replace('rgb','rgba').replace('#','');
+      ctx.globalAlpha=0.12+Math.sin(Date.now()*.004)*0.06;
+      ctx.fillStyle=m.col;ctx.fillRect(bx+1,by+1,bw-2,bh-2);
+      ctx.globalAlpha=1;
+    }
+
+    // Mode name
+    ctx.fillStyle=sel?m.col:'#888';
+    ctx.font=(sel?'10px':'8px')+' "Press Start 2P"';
+    ctx.textAlign='left';
+    ctx.fillText(m.name,bx+14,by+20);
+
+    // Stars
+    ctx.fillStyle=sel?m.col:'#555';
+    ctx.font='8px "Press Start 2P"';
+    ctx.textAlign='right';
+    ctx.fillText(m.icon,bx+bw-14,by+20);
+
+    // Description lines
+    ctx.font='4px "Press Start 2P"';
+    m.lines.forEach(function(ln,li){
+      ctx.fillStyle=sel?'#ccc':'#555';
+      ctx.textAlign='left';
+      ctx.fillText('• '+ln, bx+14, by+35+li*11);
+    });
+
+    // Selected indicator arrow
+    if(sel){
+      ctx.fillStyle=m.col;
+      ctx.font='7px "Press Start 2P"';
+      ctx.textAlign='right';
+      ctx.fillText('▶',bx+bw-4,by+bh-8);
+    }
+  });
+
+  // Tap to confirm hint
+  if(Math.floor(Date.now()/500)%2===0){
+    ctx.fillStyle=td(120,2);ctx.font='5px "Press Start 2P"';
+    ctx.textAlign='center';
+    ctx.fillText('TAP CARD TO SELECT & START',GW/2,370);
+  }
+
+  ctx.textAlign='left';
+}
+
 function drwTitle(t){
   ctx.fillStyle='#000';ctx.fillRect(0,0,GW,GH);drwScan();
   ctx.fillStyle='rgba(255,255,255,.05)';for(var i=0;i<28;i++)ctx.fillRect((i*73+Math.floor(t*.5))%GW,(i*41)%GH,1+(i%3),1);
@@ -2540,20 +2723,51 @@ function doSel(){
 
 function initLv(i){
   cLv=i;lData=mkLv(i);
-  enemies=lData.en.map(function(e){return new Enemy(e.t,e.x,e.y);});
+  var dc=DC();
+  enemies=lData.en.map(function(e){
+    var en=new Enemy(e.t,e.x,e.y);
+    en.hp=Math.max(1,Math.round(en.hp*dc.enHpM));
+    en.mhp=en.hp;
+    en.vx*=dc.enSpdM;
+    return en;
+  });
   pickups=(lData.pk||[]).map(function(p){return new Pickup(p.t,p.x,p.y);});
-  wizard=null;bSpawn=true;bDone=false;wSpawn=false;wDlg=false;noBrd=false;puTimer=10;
+  wizard=null;bSpawn=true;bDone=false;wSpawn=false;wDlg=false;noBrd=false;puTimer=10*DC().puFreqM;
   cam=new Camera();player.x=40;player.y=GH-80;player.vx=0;player.vy=0;
-  if(i>=1)player.dj=true;  // double jump unlocked from level 1+
+  if(i>=dc.djFromLv)player.dj=true; // double jump — level depends on difficulty
   if(i===2&&!player.gB)player.hB=false;
   // Spawn boss at end of world immediately — he's waiting there
   var bossTypes=['kn','vk','ul'];
   boss=new Boss(bossTypes[i],lData.bX);
+  boss.hp=Math.max(1,Math.round(boss.hp*dc.bossHpM));
+  boss.mhp=boss.hp;
+  boss.baseSpd*=dc.bossSpdM;
   startM(i);updateCSSIntensity();setTimeout(resize,100);
+}
+
+
+function _startFromDiff(){
+  var sv=getSave();
+  if(sv.level>0){
+    // Continue from save
+    DIFF=pCur;var lv=Math.min(sv.level,2);
+    setSave({level:sv.level,diff:DIFF});
+    var p=new Player();gScore=0;parts=[];bgC=[];
+    player=p;
+    var dc=DC();player.hp=dc.plrHp;player.lives=dc.plrLives;
+    initLv(lv);gState=ST.LT;trT=2;pbtn.textContent='PAUSE';
+    if(!localStorage.getItem(TUT_KEY))showTut();
+  } else {
+    DIFF=pCur;
+    setSave({level:0,diff:DIFF});
+    restart(0);
+  }
 }
 
 function restart(fromLv){
   player=new Player();gScore=0;parts=[];bgC=[];
+  var dc=DC();
+  player.hp=dc.plrHp;player.lives=dc.plrLives;
   var lv=fromLv||0;
   initLv(lv);gState=ST.LT;trT=2;pbtn.textContent='PAUSE';
   if(!localStorage.getItem(TUT_KEY))showTut();
@@ -2574,7 +2788,23 @@ function gLoop(ts){
 
   if(gState===ST.T){
     ttT+=dt;if(Math.random()<dt*.5)spCrit();updCrit(dt);drwTitle(ttT);
-    if(keys._ep||keys._jp){var sv=getSave();if(sv.level>0)continueGame();else restart();getAC();}
+    if(keys._ep||keys._jp){
+      getAC();
+      var sv=getSave();
+      if(sv.level>0&&sv.diff!==undefined){
+        // Saved game with known diff — go straight to difficulty
+        DIFF=sv.diff||1;
+      }
+      gState=ST.D;pCur=DIFF;pSCool=0.3;
+    }
+  }
+  else if(gState===ST.D){
+    updCrit(dt);drwDiff();
+    // Keyboard shortcuts: 1=baby 2=kid 3=adult, Enter/tap selects highlighted
+    if(keys.ArrowLeft&&pSCool<=0){DIFF=Math.max(0,DIFF-1);pSCool=0.18;}
+    if(keys.ArrowRight&&pSCool<=0){DIFF=Math.min(2,DIFF+1);pSCool=0.18;}
+    if(pSCool>0)pSCool-=dt;
+    if(keys._ep||keys._jp){_startFromDiff();}
   }
   else if(gState===ST.LT){
     trT-=dt;updCrit(dt);drwLvl(cLv);if(trT<=0)gState=ST.P;
@@ -2603,7 +2833,7 @@ function gLoop(ts){
     if(wizard)wizard.upd(dt,player);
     updP();if(Math.random()<dt*.3)spCrit();updCrit(dt);gScore+=Math.floor(dt*8);
     // Random powerup drops every ~12-18s
-    puTimer-=dt;if(puTimer<=0){puTimer=12+Math.random()*8;var puTypes=['h','h','sp','sh','bi','w'];var pt=puTypes[Math.floor(Math.random()*puTypes.length)];var px3=player.x+40+Math.random()*120;pickups.push(new Pickup(pt,Math.min(px3,lData.w-30),GH-80));}
+    puTimer-=dt;if(puTimer<=0){puTimer=(12+Math.random()*8)*DC().puFreqM;var puTypes=['h','h','sp','sh','bi','w'];var pt=puTypes[Math.floor(Math.random()*puTypes.length)];var px3=player.x+40+Math.random()*120;pickups.push(new Pickup(pt,Math.min(px3,lData.w-30),GH-80));}
     if(boss){boss.upd(dt,player);if(!boss.alive&&!bDone){bDone=true;gScore+=500*(cLv+1);SFX.lup();
       if(cLv===1){setTimeout(function(){player.hB=false;noBrd=true;noBrdT=6;SFX.bLost();sfAmt=.5;},1200);setSave({level:2});setTimeout(function(){cLv=2;initLv(2);gState=ST.LT;trT=2.5;},4000);}
       else if(cLv===0){setSave({level:1});setTimeout(function(){cLv=1;initLv(1);gState=ST.LT;trT=2.5;},2500);}
