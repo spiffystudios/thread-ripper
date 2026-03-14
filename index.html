@@ -29,13 +29,12 @@ html,body{background:#0a0a0a;overflow:hidden;height:100%;width:100%;touch-action
 .btn:active,.btn.on{transform:translateY(4px)!important;box-shadow:0 1px 0 rgba(0,0,0,0.7),0 2px 6px rgba(0,0,0,0.5)!important}
 #bL{width:70px;height:70px;font-size:24px;background:#1a3a5c;border-color:hsl(210,90%,50%)}
 #bR{width:70px;height:70px;font-size:24px;background:#1a4a30;border-color:hsl(150,90%,45%)}
-#bJ{width:80px;height:80px;font-size:8px;background:#4a3800;border-color:hsl(45,100%,55%);border-width:4px}
+#bJ{width:86px;height:86px;font-size:7px;background:#4a3800;border-color:hsl(45,100%,55%);border-width:4px}
 #bA{width:62px;height:62px;font-size:7px;background:#4a1a1a;border-color:hsl(0,90%,55%)}
-#bT{width:56px;height:56px;font-size:6px;background:#2a1a4a;border-color:hsl(280,90%,65%)}
 .btn-lbl{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:4px;color:#555;white-space:nowrap}
 #tut{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
 #tut-inner{max-width:380px;width:100%;background:#111;border:3px solid hsl(0,100%,55%);border-radius:14px;padding:20px;animation:rb 3s linear infinite}
-#tut-title{font-size:9px;text-align:center;margin-bottom:16px;color:#fff;line-height:1.8}
+#tut-title{font-size:9px;text-align:center;margin-bottom:14px;color:#fff;line-height:1.8;background:linear-gradient(90deg,hsl(0,90%,65%),hsl(60,90%,60%),hsl(200,90%,65%));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 #tut-body{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
 .tut-row{display:flex;align-items:center;gap:14px;background:#1a1a1a;border-radius:10px;padding:12px 14px}
 .tut-icon{font-size:28px;flex-shrink:0;width:40px;text-align:center}
@@ -80,8 +79,7 @@ html,body{background:#0a0a0a;overflow:hidden;height:100%;width:100%;touch-action
         <div id="lives-val">&#9829;&#9829;&#9829;</div>
       </div>
       <div id="actions">
-        <div class="btn" id="bT">TRICK<span class="btn-lbl">TRICK</span></div>
-        <div class="btn" id="bA">ATK<span class="btn-lbl">ATTACK</span></div>
+<div class="btn" id="bA">ATK<span class="btn-lbl">ATTACK</span></div>
         <div class="btn" id="bJ">JUMP<span class="btn-lbl">JUMP</span></div>
       </div>
     </div>
@@ -194,7 +192,6 @@ window.addEventListener('keydown',function(e){
   keys[e.code]=true;
   if((e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyW')&&!keys._jh){keys._jp=true;keys._jh=true;}
   if(e.code==='KeyX'||e.code==='KeyZ')keys._ap=true;
-  if(e.code==='KeyC'||e.code==='ArrowDown'||e.code==='KeyS')keys._tp=true;
   if(e.code==='KeyP')keys._pp=true;
   if(e.code==='Enter')keys._ep=true;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code)>=0)e.preventDefault();
@@ -215,7 +212,6 @@ wireBtn('bL',function(){touch.L=true;},function(){touch.L=false;});
 wireBtn('bR',function(){touch.R=true;},function(){touch.R=false;});
 wireBtn('bJ',function(){keys._jp=true;},function(){});
 wireBtn('bA',function(){keys._ap=true;},function(){});
-wireBtn('bT',function(){keys._tp=true;},function(){});
 
 cv.addEventListener('touchend',function(e){e.preventDefault();if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}},{passive:false});
 cv.addEventListener('click',function(){if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}});
@@ -241,52 +237,135 @@ function updateHUD(){
 // Tutorial
 var TUT_KEY='trTutV4';
 var tutIdx=0,tutFromPause=false;
-var MOB_TUT=[
-  {title:'HOW TO PLAY',rows:[
-    {icon:'\u25c4\u25ba',lines:['Tap LEFT to skate left','Tap RIGHT to skate right']},
-    {icon:'\u2b06',lines:['Tap JUMP to leap','Tap JUMP again = double jump!']},
-    {icon:'\u2694',lines:['Tap ATK to whip your lace','Defeats enemies and bosses']},
-    {icon:'\ud83d\udef9',lines:['Tap TRICK while in the air','Earns big bonus points!']}
-  ]},
-  {title:'THE QUEST',rows:[
-    {icon:'\ud83c\udfed',lines:['3 worlds to skate through','Each ends with a boss fight']},
-    {icon:'\u26a0',lines:['Viktor steals your board!','Find the Wizard to get it back']},
-    {icon:'\u2b50',lines:['Defeat all 3 bosses to win','Good luck, Lace!']}
-  ]}
-];
-var DSK_TUT=[
-  {title:'HOW TO PLAY',rows:[
-    {icon:'\u2328',lines:['A / \u2190 = move left','D / \u2192 = move right']},
-    {icon:'\u2b06',lines:['SPACE or \u2191 = jump','Press again in air = double jump']},
-    {icon:'\u2694',lines:['X or Z = attack','C or \u2193 (in air) = trick']},
-    {icon:'\u23f8',lines:['P = pause game','ENTER = confirm menus']}
-  ]},
-  {title:'THE QUEST',rows:[
-    {icon:'\ud83c\udfed',lines:['3 worlds to skate through','Each ends with a boss fight']},
-    {icon:'\u26a0',lines:['Viktor steals your board!','Find the Wizard to get it back']},
-    {icon:'\u2b50',lines:['Defeat all 3 bosses to win','Good luck, Lace!']}
-  ]}
+// Tutorial pages — story first, then controls, then powerups
+var TUT_PAGES=[
+  {type:'story'},
+  {type:'controls'},
+  {type:'powerups'}
 ];
 function showTut(fp){tutIdx=0;tutFromPause=!!fp;renderTut();document.getElementById('tut').style.display='flex';}
 function closeTut(){document.getElementById('tut').style.display='none';localStorage.setItem(TUT_KEY,'1');getAC();tutFromPause=false;}
+
 function renderTut(){
-  var steps=isMob?MOB_TUT:DSK_TUT,s=steps[tutIdx];
-  if(!s){closeTut();return;}
-  document.getElementById('tut-title').textContent=s.title;
-  var body=document.getElementById('tut-body');body.innerHTML='';
-  s.rows.forEach(function(row){
-    var d=document.createElement('div');d.className='tut-row';
-    var ic=document.createElement('div');ic.className='tut-icon';ic.textContent=row.icon;
-    var ls=document.createElement('div');ls.className='tut-lines';
-    row.lines.forEach(function(l){var p=document.createElement('div');p.className='tut-line';p.textContent=l;ls.appendChild(p);});
-    d.appendChild(ic);d.appendChild(ls);body.appendChild(d);
-  });
+  var p=TUT_PAGES[tutIdx];
+  if(!p){closeTut();return;}
+  var title=document.getElementById('tut-title');
+  var body=document.getElementById('tut-body');
+  body.innerHTML='';
+
+  if(p.type==='story'){
+    title.textContent='THREAD RIPPER';
+    // Story card
+    var card=document.createElement('div');
+    card.style.cssText='background:#0a0a14;border:2px solid rgba(255,100,50,.4);border-radius:10px;padding:16px;';
+    card.innerHTML=[
+      '<div style="font-size:5px;color:#aaa;line-height:2.2;letter-spacing:.3px;">',
+      'Deep in Sneaker City, a pair of animated shoelaces named',
+      ' <span style="color:#FFD700">LACE</span> lived to skate.',
+      ' One day the evil <span style="color:#CC44CC">Velcro Viktor</span> — a half-velcro,',
+      ' half-demon bootleg sneaker — ripped Lace\'s board clean off their feet.',
+      '</div>',
+      '<div style="font-size:5px;color:#aaa;line-height:2.2;margin-top:10px;letter-spacing:.3px;">',
+      'Lace must fight through three wild worlds —',
+      ' <span style="color:#ff8c00">The Sneaker Factory</span>,',
+      ' <span style="color:#00ff80">The Skate Park</span>, and the',
+      ' <span style="color:#4488ff">Hall of Fame</span> —',
+      ' defeating bosses to reclaim the board.',
+      ' An ancient Wizard waits at the end with a secret weapon:',
+      ' <span style="color:gold">the legendary Glow Board</span>.',
+      '</div>',
+      '<div style="font-size:5px;color:#888;line-height:2;margin-top:10px;font-style:italic">',
+      'Thread your story. Lace up. Let\'s ride.',
+      '</div>'
+    ].join('');
+    body.appendChild(card);
+  }
+
+  else if(p.type==='controls'){
+    title.textContent=isMob?'CONTROLS':'CONTROLS';
+    if(isMob){
+      // Mobile: show button icons with labels
+      var rows=[
+        {bg:'#1a3a5c',bc:'hsl(210,90%,50%)',icon:'◄►',label:'LEFT / RIGHT',desc:'Hold to skate in that direction'},
+        {bg:'#4a3800',bc:'hsl(45,100%,55%)',icon:'⬆⬆',label:'JUMP (tap twice)',desc:'Second jump = double jump + trick!'},
+        {bg:'#4a1a1a',bc:'hsl(0,90%,55%)',icon:'⚔',label:'ATK',desc:'Whip your lace — hits enemies & bosses'},
+      ];
+      rows.forEach(function(r){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:11px 14px;margin-bottom:8px;';
+        var btn=document.createElement('div');
+        btn.style.cssText='width:48px;height:48px;border-radius:50%;background:'+r.bg+';border:3px solid '+r.bc+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;';
+        btn.textContent=r.icon;
+        var txt=document.createElement('div');
+        txt.innerHTML='<div style="font-size:7px;color:#fff;margin-bottom:5px;">'+r.label+'</div><div style="font-size:5px;color:#888;line-height:1.7;">'+r.desc+'</div>';
+        row.appendChild(btn);row.appendChild(txt);body.appendChild(row);
+      });
+    } else {
+      // Desktop keyboard layout
+      var keys2=[
+        {keys:['← →','A  D'],col:'#1a3a5c',bc:'hsl(210,90%,50%)',desc:'Move left / right'},
+        {keys:['SPACE','↑'],col:'#4a3800',bc:'hsl(45,100%,55%)',desc:'Jump → tap twice = double jump + trick!'},
+        {keys:['Z','X'],col:'#4a1a1a',bc:'hsl(0,90%,55%)',desc:'Attack — whip your lace'},
+        {keys:['P'],col:'#222',bc:'#555',desc:'Pause the game'},
+      ];
+      keys2.forEach(function(r){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:11px 14px;margin-bottom:8px;';
+        var kbox=document.createElement('div');
+        kbox.style.cssText='display:flex;gap:4px;flex-shrink:0;';
+        r.keys.forEach(function(k){
+          var kb=document.createElement('div');
+          kb.style.cssText='background:'+r.col+';border:2px solid '+r.bc+';border-radius:6px;padding:4px 7px;font-size:6px;color:#fff;white-space:nowrap;';
+          kb.textContent=k;kbox.appendChild(kb);
+        });
+        var txt=document.createElement('div');
+        txt.style.cssText='font-size:5px;color:#888;line-height:1.7;';
+        txt.textContent=r.desc;
+        row.appendChild(kbox);row.appendChild(txt);body.appendChild(row);
+      });
+    }
+    // Double jump tip
+    var tip=document.createElement('div');
+    tip.style.cssText='background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:10px 12px;font-size:5px;color:#FFD700;line-height:1.8;margin-top:4px;';
+    tip.innerHTML='⬆⬆ <b>PRO TIP:</b> Double jumping mid-air auto-triggers a trick and earns bonus points!';
+    body.appendChild(tip);
+  }
+
+  else if(p.type==='powerups'){
+    title.textContent='POWER-UPS';
+    var pups=[
+      {col:'#FF4444',icon:'♥',name:'HEAL',desc:'Restores 2 HP instantly'},
+      {col:'#4488FF',icon:'⚡',name:'SPEED',desc:'8 second speed boost'},
+      {col:'#FFD700',icon:'★',name:'SHIELD',desc:'4 seconds of invincibility'},
+      {col:'#FF8800',icon:'⚔',name:'POWER',desc:'Doubles your attack range'},
+    ];
+    pups.forEach(function(pu){
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;background:#1a1a1a;border-radius:10px;padding:9px 14px;margin-bottom:7px;';
+      var ic=document.createElement('div');
+      ic.style.cssText='width:38px;height:38px;border-radius:8px;background:'+pu.col+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;';
+      ic.textContent=pu.icon;
+      var txt=document.createElement('div');
+      txt.innerHTML='<div style="font-size:7px;color:'+pu.col+';margin-bottom:4px;">'+pu.name+'</div><div style="font-size:5px;color:#888;line-height:1.7;">'+pu.desc+'</div>';
+      row.appendChild(ic);row.appendChild(txt);body.appendChild(row);
+    });
+    var note=document.createElement('div');
+    note.style.cssText='font-size:5px;color:#555;text-align:center;margin-top:4px;line-height:1.8;';
+    note.textContent='Power-ups drop frequently! Grab everything you see.';
+    body.appendChild(note);
+  }
+
+  // Dots
   var dots=document.getElementById('tut-dots');dots.innerHTML='';
-  steps.forEach(function(_,i){var d=document.createElement('div');d.className='tdot'+(i===tutIdx?' on':'');dots.appendChild(d);});
+  TUT_PAGES.forEach(function(_,i){
+    var d=document.createElement('div');d.className='tdot'+(i===tutIdx?' on':'');dots.appendChild(d);
+  });
+  // Next button
   var nxt=document.getElementById('tut-next');
-  nxt.textContent=tutIdx>=steps.length-1?(tutFromPause?'CLOSE':'PLAY!'):'NEXT';
+  nxt.textContent=tutIdx>=TUT_PAGES.length-1?(tutFromPause?'CLOSE':'PLAY! ►'):'NEXT ►';
 }
-function nextTut(){tutIdx++;var s=isMob?MOB_TUT:DSK_TUT;if(tutIdx>=s.length)closeTut();else renderTut();}
+
+function nextTut(){tutIdx++;if(tutIdx>=TUT_PAGES.length)closeTut();else renderTut();}
 document.getElementById('tut-next').addEventListener('click',nextTut);
 document.getElementById('tut-next').addEventListener('touchend',function(e){e.preventDefault();nextTut();},{passive:false});
 document.getElementById('tut-skip').addEventListener('click',closeTut);
@@ -365,7 +444,7 @@ function drwPlat(plats){
 function rov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
 
 // Player
-function Player(){this.x=40;this.y=GH-80;this.w=26;this.h=28;this.vx=0;this.vy=0;this.og=false;this.jl=1;this.hp=5;this.lives=3;this.ac=0;this.atk=false;this.at=0;this.ht=0;this.wt=0;this.st=0;this.fr=true;this.af=0;this.aT=0;this.hB=true;this.gB=false;this.tT=0;this.tCool=0;this.gT=0;this.onR=false;this.dj=false;this.shieldT=0;this.bigAtk=0;}
+function Player(){this.x=40;this.y=GH-80;this.w=26;this.h=28;this.vx=0;this.vy=0;this.og=false;this.jl=1;this.hp=5;this.lives=3;this.ac=0;this.atk=false;this.at=0;this.ht=0;this.wt=0;this.st=0;this.fr=true;this.af=0;this.aT=0;this.hB=true;this.gB=false;this.tT=0;this.tCool=0;this.gT=0;this.onR=false;this.dj=true;this.shieldT=0;this.bigAtk=0;}
 Player.prototype.upd=function(dt,plats){
   if(this.ht>0)this.ht-=dt;if(this.ac>0)this.ac-=dt;if(this.shieldT>0)this.shieldT-=dt;if(this.bigAtk>0)this.bigAtk-=dt;
   if(this.at>0){this.at-=dt;this.atk=true;}else this.atk=false;
@@ -375,10 +454,19 @@ Player.prototype.upd=function(dt,plats){
   else if(keys.ArrowRight||keys.KeyD||touch.R){this.vx=sp;this.fr=true;}
   else this.vx*=.82;
   if(keys._jp){
-    if(this.og){this.vy=JF;this.og=false;this.jl=this.dj?1:0;SFX.jump();}
-    else if(this.dj&&this.jl>0){this.vy=JF*.82;this.jl=0;SFX.jump();}
+    if(this.og){
+      // First jump — leave ground
+      this.vy=JF;this.og=false;
+      this.jl=this.dj?1:0; // 1 = one more jump left
+      SFX.jump();
+    } else if(this.dj&&this.jl>0){
+      // DOUBLE JUMP — Smash style: jump + auto trick!
+      this.vy=JF*.85;this.jl=0;
+      SFX.jump();
+      // Auto-trigger trick on double jump
+      if(this.hB&&this.tCool<=0)this.doTrick();
+    }
   }
-  if((keys._tp||touch.tp)&&this.hB&&!this.og&&this.tCool<=0)this.doTrick();
   if(keys._ap&&this.ac<=0){this.ac=.5;this.at=.18;SFX.atk();}
   this.vy+=GR;this.x+=this.vx;this.y+=this.vy;
   this.og=false;this.onR=false;
@@ -713,7 +801,6 @@ function initLv(i){
   pickups=(lData.pk||[]).map(function(p){return new Pickup(p.t,p.x,p.y);});
   boss=null;wizard=null;bSpawn=false;bDone=false;wSpawn=false;wDlg=false;noBrd=false;puTimer=10;
   cam=new Camera();player.x=40;player.y=GH-80;player.vx=0;player.vy=0;
-  if(i>=1)player.dj=true;
   if(i===2&&!player.gB)player.hB=false;
   startM(i);updateCSSIntensity();setTimeout(resize,100);
 }
