@@ -7,10 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{background:#0a0a0a;overflow:hidden;height:100%;touch-action:none;font-family:'Press Start 2P',monospace}
+html,body{background:#0a0a0a;overflow:hidden;height:100%;width:100%;touch-action:none;font-family:'Press Start 2P',monospace;position:fixed;top:0;left:0}
 @keyframes rb{0%{border-color:hsl(0,100%,55%)}33%{border-color:hsl(120,100%,50%)}66%{border-color:hsl(240,100%,60%)}100%{border-color:hsl(0,100%,55%)}}
 @keyframes rbb{0%{background:linear-gradient(90deg,hsl(0,80%,32%),hsl(60,90%,38%),hsl(120,80%,32%))}50%{background:linear-gradient(90deg,hsl(200,80%,32%),hsl(260,90%,38%),hsl(320,80%,32%))}100%{background:linear-gradient(90deg,hsl(0,80%,32%),hsl(60,90%,38%),hsl(120,80%,32%))}}
-#wrap{display:flex;flex-direction:column;width:100%;max-width:430px;height:100vh;max-height:100vh;margin:0 auto;background:#0a0a0a;border-left:3px solid hsl(0,100%,55%);border-right:3px solid hsl(0,100%,55%);animation:rb 4s linear infinite;overflow:hidden;box-shadow:0 0 24px rgba(255,50,150,0.4)}
+#wrap{display:flex;flex-direction:column;width:100%;max-width:430px;margin:0 auto;background:#0a0a0a;border-left:3px solid hsl(0,100%,55%);border-right:3px solid hsl(0,100%,55%);animation:rb 4s linear infinite;overflow:hidden;box-shadow:0 0 24px rgba(255,50,150,0.4)}
 #bar{display:flex;align-items:center;height:40px;padding:0 10px;gap:6px;flex-shrink:0;animation:rbb 5s linear infinite}
 #bar span{color:#fff;font-size:6px;flex:1;text-shadow:1px 1px 0 #0008;letter-spacing:.5px}
 .bb{background:rgba(0,0,0,0.5);border:2px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;font-family:'Press Start 2P',monospace;font-size:7px;padding:5px 9px;cursor:pointer;touch-action:manipulation;flex-shrink:0}
@@ -66,7 +66,6 @@ html,body{background:#0a0a0a;overflow:hidden;height:100%;touch-action:none;font-
   <div id="bar">
     <span>THREAD RIPPER</span>
     <button class="bb" id="pbtn">PAUSE</button>
-    <button class="bb" id="mbtn">MIN</button>
   </div>
   <div id="cvwrap"><canvas id="cv"></canvas></div>
   <div id="ctrl">
@@ -117,28 +116,50 @@ function tdg(x1,y1,x2,y2,o,sp){o=o||0;sp=sp||1;const g=ctx.createLinearGradient(
 
 // Resize
 function updateCSSIntensity(){const s=['8s','5s','3s'][Math.min(cLv||0,2)];const w=document.getElementById('wrap');if(w)w.style.animationDuration=s;const b=document.getElementById('bar');if(b)b.style.animationDuration=s;}
+
 function resize(){
   if(mini)return;
+  // Use actual window dimensions — works on iPhone, iPad, desktop, iframe
+  const WW=window.innerWidth||document.documentElement.clientWidth||320;
+  const WH=window.innerHeight||document.documentElement.clientHeight||600;
+  const gameW=Math.min(WW,430);
+
+  // Set wrap to fill screen
+  const wrapEl=document.getElementById('wrap');
+  if(wrapEl){
+    wrapEl.style.width=gameW+'px';
+    wrapEl.style.height=WH+'px';
+    wrapEl.style.maxWidth=gameW+'px';
+  }
+
+  // Bar height is fixed at 40px, ctrl height is fixed ~120px
+  const barH=40;
+  const ctrlEl=document.getElementById('ctrl');
+  const ctrlH=ctrlEl?(ctrlEl.offsetHeight>0?ctrlEl.offsetHeight:130):130;
+  const availH=WH-barH-ctrlH;
+
+  // Canvas fills available height, constrained by width
+  const scaleByW=gameW/GW;
+  const scaleByH=availH/GH;
+  const s=Math.min(scaleByW,scaleByH);
+  const cw2=Math.floor(GW*s);
+  const ch=Math.floor(GH*s);
+
   cv.width=GW;cv.height=GH;
-  const cw=document.getElementById('cvwrap');
-  if(!cw)return;
-  const aw=cw.clientWidth||320,ah=cw.clientHeight||300;
-  const s=Math.min(aw/GW,ah/GH);
-  cv.style.width=Math.floor(GW*s)+'px';cv.style.height=Math.floor(GH*s)+'px';
+  cv.style.width=cw2+'px';cv.style.height=ch+'px';
+
+  const cvwrap=document.getElementById('cvwrap');
+  if(cvwrap){cvwrap.style.height=ch+'px';}
+
   scale=s;
 }
-window.addEventListener('resize',function(){setTimeout(resize,50);});
-setTimeout(resize,300);
+window.addEventListener('resize',function(){setTimeout(resize,80);});
+// Fire resize multiple times to handle iOS Safari toolbar show/hide
+setTimeout(resize,0);
+setTimeout(resize,100);
+setTimeout(resize,500);
 
-document.getElementById('mbtn').addEventListener('click',function(){
-  mini=!mini;wrap.classList.toggle('mini',mini);
-  document.getElementById('mbtn').textContent=mini?'MAX':'MIN';
-  var cw=document.getElementById('cvwrap'),ct=document.getElementById('ctrl');
-  if(cw)cw.style.display=mini?'none':'flex';
-  if(ct)ct.style.display=mini?'none':'flex';
-  if(!mini)setTimeout(resize,50);
-});
-document.getElementById('mbtn').addEventListener('touchend',function(e){e.preventDefault();document.getElementById('mbtn').click();},{passive:false});
+// minimize removed
 
 // Audio
 var AC=null;
@@ -191,9 +212,9 @@ function wireBtn(id,onDn,onUp){
 }
 wireBtn('bL',function(){touch.L=true;},function(){touch.L=false;});
 wireBtn('bR',function(){touch.R=true;},function(){touch.R=false;});
-wireBtn('bJ',function(){touch.jp=true;keys._jp=true;},function(){touch.jp=false;});
+wireBtn('bJ',function(){keys._jp=true;},function(){});
 wireBtn('bA',function(){keys._ap=true;},function(){});
-wireBtn('bT',function(){touch.tp=true;keys._tp=true;},function(){touch.tp=false;});
+wireBtn('bT',function(){keys._tp=true;},function(){});
 
 cv.addEventListener('touchend',function(e){e.preventDefault();if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}},{passive:false});
 cv.addEventListener('click',function(){if(gState===ST.T||gState===ST.GO||gState===ST.W){keys._ep=true;getAC();}});
@@ -350,7 +371,7 @@ Player.prototype.upd=function(dt,plats){
   if(keys.ArrowLeft||keys.KeyA||touch.L){this.vx=-sp;this.fr=false;}
   else if(keys.ArrowRight||keys.KeyD||touch.R){this.vx=sp;this.fr=true;}
   else this.vx*=.82;
-  if(keys._jp||touch.jp){
+  if(keys._jp){
     if(this.og){this.vy=JF;this.og=false;this.jl=this.dj?1:0;SFX.jump();}
     else if(this.dj&&this.jl>0){this.vy=JF*.82;this.jl=0;SFX.jump();}
   }
