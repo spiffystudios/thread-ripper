@@ -100,11 +100,11 @@ const wrap=document.getElementById('wrap');
 let scale=1,mini=false,gState=ST.T,gScore=0,hiSc=+localStorage.getItem('trhi')||0;
 let cLv=0,lData=null,enemies=[],pickups=[],boss=null,wizard=null;
 let bSpawn=false,bDone=false,wSpawn=false,wDlg=false,wDlgT=0,noBrd=false,noBrdT=0;
-let trT=0,ttT=0,wtT=0,sfAmt=0,pCur=0,pSCool=0,pMB=[{},{},{},{}];
+let trT=0,ttT=0,wtT=0,sfAmt=0,pCur=0,pSCool=0,pMB=[{},{},{},{},{}];
 let lastT=0,player,cam;
 var puTimer=10; // first powerup drop after 10s
 let parts=[],bgC=[],egT=0,egM=null,egL=0;
-const PMENU=['RESUME','HOW TO PLAY','RESTART','QUIT TO TITLE'];
+var PMENU=['RESUME','MUSIC: ON','HOW TO PLAY','RESTART','QUIT TO TITLE'];
 
 // Tie-dye level-aware
 function tdMult(){const b=cLv||0,boss=gState===3?1.5:1;return([0.15,0.5,1.0][Math.min(b,2)])*boss;}
@@ -185,14 +185,14 @@ var SFX={
   lup:function(){[400,600,800,1000].forEach(function(f,i){tone(f,.1,'square',.1,i*.09);});}
 };
 // Music
-var mPlay=false,mIdx=0;
+var mPlay=false,mIdx=0,mOn=true;
 var MN=[
   [262,330,392,330,262,294,330,262],
   [294,370,440,370,330,392,440,330],
   [330,415,494,415,370,440,494,370]
 ];
 function startM(lv){
-  stopM();mPlay=true;mIdx=0;
+  stopM();if(!mOn)return;mPlay=true;mIdx=0;
   var n=MN[Math.min(lv,2)];
   function lp(){
     if(!mPlay)return;
@@ -265,6 +265,12 @@ function updateHUD(){
 
 // Tutorial
 var TUT_KEY='trTutV6';
+// ── SAVE SYSTEM ──
+var SAVE_KEY='trSave1';
+function getSave(){try{var s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):{level:0};}catch(e){return{level:0};}}
+function setSave(data){try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){}}
+function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
 var tutIdx=0,tutFromPause=false;
 // Tutorial pages — story first, then controls, then powerups
 var TUT_PAGES=[
@@ -491,7 +497,7 @@ function updDlg(dt){
 function drwDlg(){
   if(!dlg.active||dlg.idx>=dlg.lines.length)return;
   var line=dlg.lines[dlg.idx];
-  var bx=10,by=GH-70,bw=GW-20,bh=52;
+  var bx=10,by=38,bw=GW-20,bh=52;
   ctx.fillStyle='rgba(0,0,0,0.9)';ctx.fillRect(bx,by,bw,bh);
   ctx.strokeStyle=dlg.who==='kn'?'#FF8800':dlg.who==='vk'?'#8844FF':'#FF2200';
   ctx.lineWidth=2;ctx.strokeRect(bx,by,bw,bh);
@@ -1506,7 +1512,13 @@ function drwTitle(t){
   ctx.fillStyle=td(90,.7,70,70);ctx.font='5px "Press Start 2P"';ctx.fillText("A Lace's Skate Quest",GW/2,GH/2+12);
   ctx.fillStyle=td(240,.8,80,65);ctx.fillText('Thread Your Story',GW/2,GH/2+26);
   ctx.fillStyle=td(300,.6,60,70);ctx.font='4px "Press Start 2P"';ctx.fillText('by Spiffy Brand',GW/2,GH/2+40);
-  if(Math.floor(t*2)%2===0){ctx.fillStyle=td(120,2);ctx.font='7px "Press Start 2P"';ctx.fillText('TAP TO START',GW/2,GH/2+62);}
+  var _sv=getSave();
+  if(Math.floor(t*2)%2===0){
+    ctx.fillStyle=td(120,2);ctx.font='7px "Press Start 2P"';ctx.textAlign='center';
+    if(_sv.level>=3){ctx.fillText('NEW GAME / CONTINUE',GW/2,GH/2+62);}
+    else if(_sv.level>0){ctx.fillText('TAP TO CONTINUE',GW/2,GH/2+62);ctx.font='5px "Press Start 2P"';ctx.fillStyle=td(60,1);ctx.fillText('LV'+(_sv.level+1)+' SAVE FOUND',GW/2,GH/2+78);}
+    else{ctx.fillText('TAP TO START',GW/2,GH/2+62);}
+  }
   ctx.fillStyle=tda(60,.5,.4);ctx.font='4px "Press Start 2P"';ctx.fillText('spiffybrand.com',GW/2,GH-18);
   ctx.textAlign='left';
 }
@@ -1535,28 +1547,57 @@ function drwWin(wt){
   if(Math.floor(wt*2)%2===0){ctx.fillStyle=td(0,2);ctx.font='6px "Press Start 2P"';ctx.fillText('TAP TO PLAY AGAIN',GW/2,GH/2+46);}ctx.textAlign='left';
 }
 function drwPause(){
-  ctx.fillStyle='rgba(0,0,0,.82)';ctx.fillRect(0,0,GW,GH);
-  var pw=Math.min(260,GW-20),ph=200,px=(GW-pw)/2,py=(GH-ph)/2;
-  ctx.fillStyle='#111';ctx.fillRect(px,py,pw,ph);ctx.strokeStyle=td(0,1.5);ctx.lineWidth=2;ctx.strokeRect(px,py,pw,ph);ctx.strokeStyle=td(120,1);ctx.lineWidth=1;ctx.strokeRect(px+3,py+3,pw-6,ph-6);
-  ctx.fillStyle=tdg(GW/2-45,py+20,GW/2+45,py+20,0,2);ctx.font='9px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('PAUSED',GW/2,py+20);
-  ctx.strokeStyle=td(180,1);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+10,py+28);ctx.lineTo(px+pw-10,py+28);ctx.stroke();
-  PMENU.forEach(function(item,i){
-    var iy=py+52+i*34,sel=i===pCur;
-    if(sel){ctx.fillStyle=tda(i*80,1.5,.6);ctx.fillRect(px+8,iy-14,pw-16,20);}
-    ctx.fillStyle=sel?'#fff':'#aaa';ctx.font='6px "Press Start 2P"';ctx.textAlign='center';ctx.fillText(item,GW/2,iy);
-    if(sel){ctx.fillStyle=td(60,2);ctx.beginPath();ctx.moveTo(px+16,iy-4);ctx.lineTo(px+22,iy-8);ctx.lineTo(px+22,iy+1);ctx.closePath();ctx.fill();}
-    pMB[i]={x:px+8,y:iy-15,w:pw-16,h:22};
+  ctx.fillStyle='rgba(0,0,0,.85)';ctx.fillRect(0,0,GW,GH);
+  var pw=Math.min(268,GW-16),ph=248,px=(GW-pw)/2,py=Math.max(8,(GH-ph)/2);
+  // Box
+  ctx.fillStyle='#0e0e0e';ctx.fillRect(px,py,pw,ph);
+  ctx.strokeStyle=td(0,1.5);ctx.lineWidth=2;ctx.strokeRect(px,py,pw,ph);
+  ctx.strokeStyle=td(120,1);ctx.lineWidth=1;ctx.strokeRect(px+3,py+3,pw-6,ph-6);
+  // Title
+  ctx.fillStyle=tdg(GW/2-42,py+22,GW/2+42,py+22,0,2);
+  ctx.font='9px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('PAUSED',GW/2,py+22);
+  ctx.strokeStyle=td(180,1);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(px+12,py+32);ctx.lineTo(px+pw-12,py+32);ctx.stroke();
+  // Menu items
+  var menuItems=[
+    {label:'RESUME',         col:'#88FF88'},
+    {label:'MUSIC: '+(mOn?'ON':'OFF'), col:mOn?'#88FFCC':'#FF8888'},
+    {label:'HOW TO PLAY',   col:'#88CCFF'},
+    {label:'RESTART',       col:'#FFCC44'},
+    {label:'QUIT TO TITLE', col:'#FF8888'}
+  ];
+  menuItems.forEach(function(item,i){
+    var iy=py+50+i*36,sel=i===pCur;
+    if(sel){
+      ctx.fillStyle=tda(i*72,1.5,.5);
+      ctx.fillRect(px+10,iy-16,pw-20,24);
+    }
+    ctx.fillStyle=sel?item.col:'#888';
+    ctx.font='6px "Press Start 2P"';ctx.textAlign='center';
+    ctx.fillText(item.label,GW/2,iy);
+    if(sel){
+      // Arrow indicator
+      ctx.fillStyle=item.col;
+      ctx.beginPath();ctx.moveTo(px+18,iy-4);ctx.lineTo(px+25,iy-9);ctx.lineTo(px+25,iy+1);ctx.closePath();ctx.fill();
+    }
+    pMB[i]={x:px+10,y:iy-17,w:pw-20,h:26};
   });
-  ctx.fillStyle='rgba(80,80,80,.7)';ctx.font='4px "Press Start 2P"';ctx.fillText('TAP TO SELECT',GW/2,py+ph-8);ctx.textAlign='left';
+  ctx.fillStyle='rgba(70,70,70,.7)';ctx.font='4px "Press Start 2P"';
+  ctx.fillText('TAP TO SELECT',GW/2,py+ph-8);ctx.textAlign='left';
 }
 function drwWDlg(){if(!wDlg)return;ctx.fillStyle='rgba(0,0,0,.82)';ctx.fillRect(8,GH-62,GW-16,50);ctx.strokeStyle=td(0,2);ctx.lineWidth=2;ctx.strokeRect(8,GH-62,GW-16,50);ctx.fillStyle='#FFF';ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('WIZARD: "TAKE THE GLOW BOARD!',GW/2,GH-46);ctx.fillText('ANCIENT SKATE MAGIC AWAITS!"',GW/2,GH-32);ctx.fillStyle=td(60,2);ctx.fillText('[GLOW BOARD OBTAINED!]',GW/2,GH-18);ctx.textAlign='left';}
 function drwNBD(){if(!noBrd)return;ctx.fillStyle='rgba(0,0,0,.82)';ctx.fillRect(8,GH-54,GW-16,42);ctx.strokeStyle='#F44';ctx.lineWidth=2;ctx.strokeRect(8,GH-54,GW-16,42);ctx.fillStyle='#F44';ctx.font='4px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('VIKTOR STOLE YOUR BOARD!',GW/2,GH-38);ctx.fillText('FIND THE WIZARD!',GW/2,GH-24);ctx.textAlign='left';}
 
 function doSel(){
-  if(pCur===0){gState=ST.P;pbtn.textContent='PAUSE';}
-  else if(pCur===1){gState=ST.P;showTut(true);}
-  else if(pCur===2){restart();}
-  else{stopM();gState=ST.T;ttT=0;parts=[];bgC=[];pbtn.textContent='PAUSE';}
+  if(pCur===0){gState=ST.P;pbtn.textContent='PAUSE';}           // RESUME
+  else if(pCur===1){                                              // MUSIC toggle
+    mOn=!mOn;
+    if(mOn)startM(cLv);else stopM();
+    return; // stay in pause menu
+  }
+  else if(pCur===2){gState=ST.P;showTut(true);}                 // HOW TO PLAY
+  else if(pCur===3){restart(0);}                                 // RESTART
+  else{stopM();gState=ST.T;ttT=0;parts=[];bgC=[];pbtn.textContent='PAUSE';} // QUIT
   pCur=0;
 }
 
@@ -1573,10 +1614,19 @@ function initLv(i){
   startM(i);updateCSSIntensity();setTimeout(resize,100);
 }
 
-function restart(){
+function restart(fromLv){
   player=new Player();gScore=0;parts=[];bgC=[];
-  initLv(0);gState=ST.LT;trT=2;pbtn.textContent='PAUSE';
+  var lv=fromLv||0;
+  initLv(lv);gState=ST.LT;trT=2;pbtn.textContent='PAUSE';
   if(!localStorage.getItem(TUT_KEY))showTut();
+}
+function continueGame(){
+  var save=getSave();
+  var lv=Math.min(save.level||0,2);
+  restart(lv);
+}
+function newGame(){
+  clearSave();restart(0);
 }
 
 function gLoop(ts){
@@ -1586,7 +1636,7 @@ function gLoop(ts){
 
   if(gState===ST.T){
     ttT+=dt;if(Math.random()<dt*.5)spCrit();updCrit(dt);drwTitle(ttT);
-    if(keys._ep||keys._jp){restart();getAC();}
+    if(keys._ep||keys._jp){var sv=getSave();if(sv.level>0)continueGame();else restart();getAC();}
   }
   else if(gState===ST.LT){
     trT-=dt;updCrit(dt);drwLvl(cLv);if(trT<=0)gState=ST.P;
@@ -1617,9 +1667,9 @@ function gLoop(ts){
     // Random powerup drops every ~12-18s
     puTimer-=dt;if(puTimer<=0){puTimer=12+Math.random()*8;var puTypes=['h','h','sp','sh','bi','w'];var pt=puTypes[Math.floor(Math.random()*puTypes.length)];var px3=player.x+40+Math.random()*120;pickups.push(new Pickup(pt,Math.min(px3,lData.w-30),GH-80));}
     if(boss){boss.upd(dt,player);if(!boss.alive&&!bDone){bDone=true;gScore+=500*(cLv+1);SFX.lup();
-      if(cLv===1){setTimeout(function(){player.hB=false;noBrd=true;noBrdT=6;SFX.bLost();sfAmt=.5;},1200);setTimeout(function(){cLv=2;initLv(2);gState=ST.LT;trT=2.5;},4000);}
-      else if(cLv===0){setTimeout(function(){cLv=1;initLv(1);gState=ST.LT;trT=2.5;},2500);}
-      else{setTimeout(function(){gState=ST.W;wtT=0;stopM();},3000);}}}
+      if(cLv===1){setTimeout(function(){player.hB=false;noBrd=true;noBrdT=6;SFX.bLost();sfAmt=.5;},1200);setSave({level:2});setTimeout(function(){cLv=2;initLv(2);gState=ST.LT;trT=2.5;},4000);}
+      else if(cLv===0){setSave({level:1});setTimeout(function(){cLv=1;initLv(1);gState=ST.LT;trT=2.5;},2500);}
+      else{setSave({level:3});setTimeout(function(){gState=ST.W;wtT=0;stopM();},3000);}}}
     if(noBrd){noBrdT-=dt;if(noBrdT<=0)noBrd=false;}
     if(wDlg){wDlgT-=dt;if(wDlgT<=0)wDlg=false;}
     // Level ends only when boss is defeated (eX check removed — boss must be beaten)
